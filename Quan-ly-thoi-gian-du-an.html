@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý thời gian dự án</title>
+<style>:root{
+  --ink:#14213D; --ink2:#46526D; --paper:#F6F8FB; --line:#D5DDEA; --white:#fff;
+  --crit:#E4572E; --crit-soft:#FDE6DF; --hl:#FFE680; --hl-soft:#FFF4C2;
+  --m1:#2F6FED; --m2:#0FA37F; --m3:#F08A1C; --m4:#8A5CF5;
+  --ok:#0FA37F; --accent:#2F6FED;
+  --font:'Segoe UI','SF Pro Text','Helvetica Neue',Roboto,Arial,sans-serif;
+  --math:'Cambria Math','STIX Two Math','Cambria','Times New Roman',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0B1220;overflow:hidden;font-family:var(--font);color:var(--ink)}
+#viewport{position:fixed;inset:0}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;background:var(--paper);overflow:hidden;transform-origin:center center}
+
+/* slides */
+.slide{position:absolute;inset:0;padding:58px 72px 74px;opacity:0;visibility:hidden;transform:translateX(26px);transition:opacity .28s ease,transform .28s ease,visibility 0s .28s;font-size:23px;line-height:1.4}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .28s ease,transform .28s ease}
+.slide.past{transform:translateX(-26px)}
+.slide[data-member="1"]{--accent:var(--m1)} .slide[data-member="2"]{--accent:var(--m2)}
+.slide[data-member="3"]{--accent:var(--m3)} .slide[data-member="4"]{--accent:var(--m4)}
+.slide[data-member="0"]{--accent:var(--ink)}
+h1.t{margin:0 0 14px;font-size:38px;font-weight:800;letter-spacing:-.01em;line-height:1.15;display:flex;align-items:center;gap:14px}
+h1.t::before{content:"";flex:none;width:14px;height:34px;border-radius:4px;background:var(--accent)}
+h2{margin:0 0 8px;font-size:24px;font-weight:700}
+p{margin:0 0 10px}
+.sub{color:var(--ink2);font-size:23px;margin:-4px 0 18px}
+.small{font-size:19px;color:var(--ink2)}
+.tiny{font-size:15px;color:var(--ink2)}
+b,strong{font-weight:700}
+.crit{color:var(--crit);font-weight:700}
+.ok{color:var(--ok);font-weight:700}
+.blue{color:var(--m1);font-weight:700}
+.mono{font-family:var(--math)}
+.chip-member{position:absolute;top:22px;right:34px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--ink2);background:var(--white);border:1px solid var(--line);padding:4px 12px 4px 6px;border-radius:99px}
+.chip-member i{width:18px;height:18px;border-radius:50%;background:var(--accent);display:block}
+
+/* layout helpers */
+.row{display:flex;gap:24px}
+.col{display:flex;flex-direction:column;gap:14px}
+.grow{flex:1;min-width:0}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.center{text-align:center}
+.mt{margin-top:14px}.mt2{margin-top:24px}
+
+/* cards & frames */
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:18px 22px}
+.card.accent{border-top:5px solid var(--accent)}
+.card h3{margin:0 0 8px;font-size:24px;font-weight:700}
+.card p:last-child{margin-bottom:0}
+.frame{background:var(--hl-soft);border:3px solid var(--ink);border-radius:14px;padding:14px 22px;box-shadow:7px 7px 0 var(--ink);font-size:24px}
+.frame.big{font-size:32px;text-align:center;padding:18px 26px}
+.frame .math,.math{font-family:var(--math);font-size:1.18em}
+.frame.crit-f{background:var(--crit-soft);border-color:var(--crit);box-shadow:7px 7px 0 var(--crit)}
+.frame.green{background:#DDF5EC;border-color:var(--ok);box-shadow:7px 7px 0 var(--ok)}
+.note{border-left:5px solid var(--accent);background:var(--white);padding:10px 16px;border-radius:0 10px 10px 0;font-size:19px}
+.tag{display:inline-block;padding:2px 12px;border-radius:99px;font-size:16px;font-weight:700;background:var(--accent);color:#fff}
+.tag.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.tag.red{background:var(--crit)}
+.tag.gray{background:#E4E9F2;color:var(--ink2)}
+.web{display:inline-block;background:#E4EEFF;color:#1B4FBE;border-radius:8px;padding:1px 10px;font-weight:600;font-size:.88em}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:19px;background:var(--white)}
+th{background:var(--ink);color:#fff;text-align:left;padding:8px 12px;font-weight:600}
+td{padding:7px 12px;border-bottom:1px solid var(--line)}
+td.n,th.n{text-align:center}
+tr.c td{background:var(--crit-soft);font-weight:600}
+tr.c td:first-child{box-shadow:inset 5px 0 0 var(--crit)}
+table.tight td,table.tight th{padding:6px 11px;font-size:18.5px}
+table.ex td{font-size:20px}
+.tbl-wrap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+
+/* lists */
+ul.dots{list-style:none;margin:0;padding:0}
+ul.dots li{position:relative;padding-left:26px;margin-bottom:8px}
+ul.dots li::before{content:"";position:absolute;left:4px;top:.55em;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* fragments */
+.frag{opacity:0;transform:translateY(10px);transition:opacity .35s ease,transform .35s ease;pointer-events:none}
+.frag.on{opacity:1;transform:none;pointer-events:auto}
+svg .frag,tr.frag{transform:none}
+.gone.on{opacity:0}
+
+/* viz */
+.viz{width:100%}
+.viz svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--font)}
+.interactive{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+input[type=number]{width:84px;font:inherit;font-size:22px;padding:4px 8px;border:2px solid var(--ink);border-radius:8px;background:#fff;color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--m4)}
+button.btn{font:inherit;font-weight:700;font-size:20px;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:8px 18px;cursor:pointer}
+button.btn:hover{background:#26375F}
+button.btn.alt{background:#fff;color:var(--ink);border:2px solid var(--ink)}
+
+/* title & divider */
+.slide.hero{padding:0;background:linear-gradient(135deg,#14213D 0%,#1B2F5C 100%);color:#fff}
+.hero h1{font-size:60px;line-height:1.05;margin:0 0 18px;font-weight:800;letter-spacing:-.02em}
+.hero .lead{font-size:26px;color:#C9D6F2;max-width:620px}
+.hero .proj{display:inline-block;margin-top:26px;background:var(--hl);color:var(--ink);font-weight:700;border-radius:10px;padding:8px 18px;font-size:22px}
+.hero .team{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+.hero .team span{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);padding:6px 14px 6px 8px;border-radius:99px;font-size:18px}
+.hero .team i{width:16px;height:16px;border-radius:50%;display:block}
+.hero-l{position:absolute;left:72px;top:92px;width:730px}
+.hero-r{position:absolute;right:40px;top:130px;width:400px}
+.slide.divider{padding:0;background:var(--ink);color:#fff}
+.slide.divider::before{content:"";position:absolute;left:0;top:0;bottom:0;width:26px;background:var(--accent)}
+.divider .big{position:absolute;left:96px;top:120px;font-size:200px;font-weight:800;line-height:1;color:var(--accent);opacity:.95}
+.divider .dt{position:absolute;left:96px;top:352px;right:80px}
+.divider .dt h1{margin:0 0 8px;font-size:52px;font-weight:800;line-height:1.1}
+.divider .dt .who{font-size:26px;color:#C9D6F2;margin-bottom:22px}
+.divider .dt ul{margin:0;padding:0;list-style:none;font-size:23px;color:#E7EDFA}
+.divider .dt li{margin-bottom:6px;padding-left:24px;position:relative}
+.divider .dt li::before{content:"";position:absolute;left:0;top:.6em;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+/* hud */
+#hud{position:absolute;left:0;right:0;bottom:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(246,248,251,.94);border-top:1px solid var(--line);z-index:20;font-size:15px}
+#hud .legend{display:flex;gap:14px;color:var(--ink2)}
+#hud .legend span{display:flex;align-items:center;gap:6px;padding:2px 8px;border-radius:99px}
+#hud .legend span.cur{background:var(--white);color:var(--ink);font-weight:700;box-shadow:0 0 0 1px var(--line)}
+#hud .legend i{width:12px;height:12px;border-radius:50%;display:block}
+#hud .ctl{display:flex;align-items:center;gap:8px}
+#hud button{font:inherit;font-size:16px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;min-width:36px;height:30px;cursor:pointer}
+#hud button:hover{background:var(--hl-soft)}
+#hud .count{min-width:70px;text-align:center;font-weight:700;color:var(--ink2)}
+#bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);width:0;z-index:21;transition:width .25s}
+.slide.dark-hud~#hud{background:rgba(20,33,61,.9)}
+
+/* overview & notes */
+#overview{position:absolute;inset:0;background:rgba(11,18,32,.96);z-index:40;display:none;padding:34px 48px;overflow:auto;color:#fff}
+#overview.show{display:block}
+#overview h2{font-size:26px;margin-bottom:14px}
+#overview .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+#overview button{font:inherit;text-align:left;font-size:16px;padding:9px 12px;border-radius:9px;border:1px solid #33456E;background:#1A2745;color:#fff;cursor:pointer;border-left:6px solid var(--c,#888)}
+#overview button:hover,#overview button.cur{background:#2A3C69}
+#overview b{color:#9FB6E8;margin-right:6px}
+#notes{position:absolute;left:60px;right:60px;bottom:58px;background:rgba(20,33,61,.96);color:#fff;border-radius:12px;padding:12px 18px;font-size:19px;z-index:30;display:none}
+#notes.show{display:block}
+#help{position:absolute;right:22px;bottom:56px;background:rgba(20,33,61,.94);color:#fff;border-radius:12px;padding:12px 16px;font-size:16px;z-index:30;display:none;line-height:1.7}
+#help.show{display:block}
+kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;font-size:.92em}
+.notes{display:none}
+@media (prefers-reduced-motion:reduce){.slide,.frag{transition:none}}
+
+.viz[data-viz="resource"]{max-width:940px;margin-left:auto;margin-right:auto}
+
+#hud .legend span{cursor:pointer}#hud .legend span:hover{background:var(--hl-soft)}
+</style></head>
+<body><div id="viewport"><div id="stage">
+<!-- ============ MỞ ĐẦU ============ -->
+<section class="slide hero" data-member="0" data-title="Quản lý thời gian dự án">
+  <div class="hero-l">
+    <h1>Quản lý thời gian dự án</h1>
+    <p class="lead">Từ ước lượng, đường găng và làm gấp đến xác suất hoàn thành đúng hạn.</p>
+    <div class="proj">Ví dụ xuyên suốt: dự án làm web học tiếng Anh</div>
+    <div class="proj" style="margin-top:12px;background:transparent;border:2px solid var(--hl);color:#fff">Nhóm 12</div>
+    <div class="team">
+      <span><i style="background:#2F6FED"></i><b data-mname="1"></b></span>
+      <span><i style="background:#0FA37F"></i><b data-mname="2"></b></span>
+      <span><i style="background:#F08A1C"></i><b data-mname="3"></b></span>
+      <span><i style="background:#8A5CF5"></i><b data-mname="4"></b></span>
+    </div>
+  </div>
+  <div class="hero-r"><div class="viz" data-viz="hero"></div><p style="color:#9FB6E8;font-size:17px;margin-top:10px;text-align:center">Lịch của dự án web: 22 tuần, 8 công việc, 5 việc nằm trên đường găng (màu cam)</p></div>
+  <aside class="notes">Chào cả lớp. Hôm nay nhóm mình trình bày Quản lý thời gian dự án, đi theo một dự án giả định xuyên suốt là làm web học tiếng Anh. Phím mũi tên hoặc bấm chuột để chuyển bước.</aside>
+</section>
+
+<section class="slide" data-member="0" data-title="Lộ trình buổi trình bày">
+  <h1 class="t">Lộ trình hôm nay: 4 phần nối tiếp nhau</h1>
+  <p class="sub">Mỗi phần trả lời một câu hỏi, và phần sau dùng kết quả của phần trước.</p>
+  <div class="col" style="gap:12px">
+    <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m1)"><div style="flex:none;width:290px"><b data-mfull="1"></b><br><span class="small" data-mrole="1"></span></div><div class="grow"><b>Mỗi việc mất bao lâu?</b><br><span class="small">3 cách ước lượng, công thức PERT, 4 kiểu phụ thuộc</span></div><span class="tag gray">~8 phút</span></div>
+    <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m2)"><div style="flex:none;width:290px"><b data-mfull="2"></b><br><span class="small" data-mrole="2"></span></div><div class="grow"><b>Cả dự án mất bao lâu, việc nào không được trễ?</b><br><span class="small">Sơ đồ AON, TE/TL, slack, Gantt, resource chart</span></div><span class="tag gray">~8 phút</span></div>
+    <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m3)"><div style="flex:none;width:290px"><b data-mfull="3"></b><br><span class="small" data-mrole="3"></span></div><div class="grow"><b>Thiếu người hoặc cần xong sớm hơn thì sao?</b><br><span class="small">Resource leveling, làm gấp (crashing), luật Brooks</span></div><span class="tag gray">~8 phút</span></div>
+    <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m4)"><div style="flex:none;width:290px"><b data-mfull="4"></b><br><span class="small" data-mrole="4"></span></div><div class="grow"><b>Cam kết hạn nào thì an toàn?</b><br><span class="small">Phương sai, Z-score, xác suất đúng hạn, mô phỏng Monte Carlo</span></div><span class="tag gray">~8 phút</span></div>
+  </div>
+  <p class="frag small mt2">Cuối buổi: <b>Kahoot 10 câu</b> ôn lại toàn bộ, và 4 bài tập nhỏ xen giữa các phần.</p>
+  <aside class="notes">Giới thiệu nhanh bốn phần và người phụ trách. Nhấn mạnh: ước lượng, rồi lập lịch, rồi tối ưu lịch, rồi đo rủi ro.</aside>
+</section>
+
+<section class="slide" data-member="0" data-title="Câu hỏi mở đầu: vì sao dự án trễ?">
+  <h1 class="t">Lần gần nhất nhóm bạn trễ deadline là vì sao?</h1>
+  <div class="cols2" style="gap:20px">
+    <div class="card frag" style="border-left:8px solid var(--m1)"><h3>“Tưởng làm 2 ngày, hóa ra mất 6 ngày”</h3><p class="small">Ước lượng sai → <b class="blue">Phần 1</b></p></div>
+    <div class="card frag" style="border-left:8px solid var(--m2)"><h3>“Phải chờ bạn kia làm xong mới làm được”</h3><p class="small">Việc phụ thuộc nhau, đường găng → <b style="color:var(--m2)">Phần 2</b></p></div>
+    <div class="card frag" style="border-left:8px solid var(--m3)"><h3>“Ai cũng bận, thiếu người”</h3><p class="small">Nguồn lực quá tải, cần rút ngắn → <b style="color:var(--m3)">Phần 3</b></p></div>
+    <div class="card frag" style="border-left:8px solid var(--m4)"><h3>“Hứa 3 tuần nhưng bị phát sinh”</h3><p class="small">Cam kết thiếu xác suất → <b style="color:var(--m4)">Phần 4</b></p></div>
+  </div>
+  <div class="frame frag mt2 center">Quản lý thời gian = dự đoán, sắp xếp và <b>cam kết</b> có cơ sở thay vì đoán mò</div>
+  <aside class="notes">Cho cả lớp giơ tay. Mỗi nguyên nhân tương ứng đúng một phần của bài. Đây cũng là cầu nối giữa các thành viên.</aside>
+</section>
+
+<!-- ============ PHẦN 1 ============ -->
+<section class="slide divider" data-member="1" data-title="Phần 1 – Ước lượng thời gian">
+  <div class="big">1</div>
+  <div class="dt"><h1>Ước lượng thời gian</h1><div class="who"><span data-mfull="1"></span></div>
+  <ul><li>Mục tiêu và 4 yếu tố của quản lý thời gian</li><li>3 cách ước lượng, công thức PERT</li><li>4 kiểu phụ thuộc giữa các công việc</li><li>Hoạt động: tự ước lượng cùng cả lớp</li></ul></div>
+</section>
+
+<section class="slide" data-member="1" data-title="Mục tiêu và 4 yếu tố">
+  <h1 class="t">Quản lý thời gian để làm gì?</h1>
+  <div class="frame center" style="font-size:27px">Bảo đảm dự án tạo ra <b>kết quả chuyển giao đúng thời hạn dự kiến</b></div>
+  <p class="mt small">Điều này phụ thuộc vào 4 yếu tố:</p>
+  <div class="cols2" style="gap:16px">
+    <div class="card accent frag"><h3>Khối lượng công việc</h3><p class="small">Dự án phải làm những việc gì, bao nhiêu.</p><p class="small"><span class="web">Web</span> 8 đầu việc, từ khảo sát đến go-live.</p></div>
+    <div class="card accent frag"><h3>Thời gian cho từng công việc</h3><p class="small">Là hệ quả của việc cấp phát nguồn lực cho việc đó.</p><p class="small"><span class="web">Web</span> thêm 1 lập trình viên thì lập trình ngắn lại.</p></div>
+    <div class="card accent frag"><h3>Ràng buộc: không làm song song được</h3><p class="small">Phụ thuộc nhau do bản chất, hoặc dùng chung một nguồn lực.</p><p class="small"><span class="web">Web</span> chưa code xong thì chưa test được.</p></div>
+    <div class="card accent frag"><h3>Khả năng sắp xếp thành kế hoạch</h3><p class="small">Để tận dụng hiệu quả nguồn lực hiện có của dự án.</p><p class="small"><span class="web">Web</span> xếp lịch để designer không ngồi chờ.</p></div>
+  </div>
+  <aside class="notes">Đọc mục tiêu. Bốn yếu tố này cũng chính là bốn mảnh ghép của cả bài: khối lượng, thời gian từng việc, ràng buộc, và sắp xếp.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Dự án xuyên suốt: web học tiếng Anh">
+  <h1 class="t">Ví dụ xuyên suốt: dự án web học tiếng Anh</h1>
+  <p class="sub">Website cho học viên luyện từ vựng, nghe và ngữ pháp. Đội có <b>4 người</b>, đơn vị thời gian là <b>tuần</b>.</p>
+  <div class="viz" data-viz="proj-table"></div>
+  <p class="small mt">Cột “Phụ thuộc” cho biết việc nào phải xong trước. Ví dụ E (lập trình) cần cả B (giao diện) và C (CSDL).</p>
+  <aside class="notes">Giới thiệu dự án giả định. Cả 4 phần sẽ dùng đúng 8 công việc này, nên mọi người nhớ giúp: A khảo sát, B giao diện, C CSDL, D nội dung, E lập trình, F nhập liệu, G kiểm thử, H triển khai.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Ba cách ước lượng thời gian">
+  <h1 class="t">Ba cách ước lượng thời gian cho một công việc</h1>
+  <p class="sub">Dựa trên danh sách việc, nguồn lực có sẵn và các ràng buộc của dự án.</p>
+  <div class="cols3">
+    <div class="card accent frag"><h3>1. Tuyến tính</h3><div class="frame" style="font-size:21px;padding:10px 14px;box-shadow:5px 5px 0 var(--ink)">ET = bình quân các trường hợp</div><p class="small mt"><span class="web">Web</span> Soạn 1 bài học: 2, 3, 4 ngày → ET = <b>3 ngày</b></p></div>
+    <div class="card accent frag"><h3>2. Theo năng suất toàn cục</h3><div class="frame" style="font-size:21px;padding:10px 14px;box-shadow:5px 5px 0 var(--ink)">ET = TB + ΔT dự phòng sửa lỗi</div><p class="small mt"><span class="web">Web</span> 3 ngày/bài + 0.5 ngày sửa lỗi → ET = <b>3.5 ngày</b></p></div>
+    <div class="card accent frag"><h3>3. PERT</h3><div class="frame" style="font-size:21px;padding:10px 14px;box-shadow:5px 5px 0 var(--ink)">ET = (4M + O + P) / 6</div><p class="small mt">M: Most likely, O: Optimistic, P: Pessimistic.<br><span class="web">Web</span> Tích hợp chấm phát âm AI: O=4, M=6, P=10 → ET = <b>6.33 ngày</b></p></div>
+  </div>
+  <div class="note frag mt2">Việc quen thuộc, ít rủi ro: dùng cách 1 hoặc 2. Việc mới, nhiều bất định: dùng PERT, vì nó cho cả khoảng dao động.</div>
+  <aside class="notes">Ba cách trong bài giảng. Ví dụ của PERT lấy từ chấm phát âm bằng AI, một chức năng mà nhóm chưa làm bao giờ nên rất bất định.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Công thức PERT">
+  <h1 class="t">PERT: cho tình huống thực tế nhất trọng số lớn nhất</h1>
+  <div class="row" style="align-items:flex-start">
+    <div style="width:540px" class="col">
+      <div class="frame big math">ET = (O + 4M + P) / 6</div>
+      <ul class="dots mt">
+        <li class="frag"><b>M</b> là tình huống hay gặp nhất, nên được nhân <b>4</b>.</li>
+        <li class="frag"><b>O</b> và <b>P</b> là hai cực trị: làm tốt, ít lỗi và trễ nhất.</li>
+      </ul>
+      <div class="card frag" style="border-left:8px solid var(--accent)"><b>Việc E (lập trình web)</b><br>O = 5, M = 7, P = 15<br><span class="math">ET = (5 + 4×7 + 15) / 6 = 48 / 6 = <b class="crit">8 tuần</b></span></div>
+    </div>
+    <div class="grow"><div class="viz frag" data-viz="beta" data-o="5" data-m="7" data-p="15" data-w="640" data-h="320"></div><p class="small center frag">ET = 8 lệch phải so với M = 7, vì rủi ro trễ nặng hơn khả năng xong sớm.</p></div>
+  </div>
+  <aside class="notes">Nhấn mạnh trực giác: đường cong lệch phải thì trung bình dịch sang phải. Lập trình web có đuôi trễ dài nên PERT báo 8 tuần chứ không phải 7.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Ước lượng 8 công việc của dự án web">
+  <h1 class="t">Ước lượng cả 8 công việc của dự án web</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:650px"><div class="viz" data-viz="pert-table"></div></div>
+    <div class="grow"><div class="viz" data-viz="est-bars"></div><p class="tiny center" style="margin-top:-6px">Xám: M (hay gặp nhất). Xanh: ET (PERT)</p></div>
+  </div>
+  <div class="frame crit-f frag mt center" style="font-size:23px">Cộng hết ET được <b>34 tuần</b>, nhưng dự án sẽ chỉ mất <b>22 tuần</b>. Vì sao? Phần 2 sẽ trả lời.</div>
+  <aside class="notes">E và G có ET lớn hơn M vì P rất xa. Cột σ² để dành cho phần 4. Tổng 34 tuần nếu làm tuần tự, nhưng nhiều việc làm song song.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Bốn kiểu phụ thuộc giữa các công việc">
+  <h1 class="t">Bốn kiểu phụ thuộc giữa các công việc</h1>
+  <div class="cols2" style="gap:14px 20px">
+    <div class="card frag" data-s="1" style="display:flex;gap:12px;align-items:center;padding:10px 14px"><div style="width:215px;flex:none"><div class="viz" data-viz="dep" data-type="FS"></div></div><div><b>Finish-to-Start</b> <span class="tag">phổ biến nhất</span><p class="small" style="margin:2px 0">B chỉ bắt đầu khi A đã kết thúc.</p><p class="small" style="margin:0"><span class="web">Web</span> Code xong (E) mới kiểm thử (G).</p></div></div>
+    <div class="card frag" data-s="2" style="display:flex;gap:12px;align-items:center;padding:10px 14px"><div style="width:215px;flex:none"><div class="viz" data-viz="dep" data-type="FF"></div></div><div><b>Finish-to-Finish</b><p class="small" style="margin:2px 0">B chỉ kết thúc khi A đã kết thúc.</p><p class="small" style="margin:0"><span class="web">Web</span> Nhập liệu (F) chỉ xong khi soạn nội dung (D) xong.</p></div></div>
+    <div class="card frag" data-s="3" style="display:flex;gap:12px;align-items:center;padding:10px 14px"><div style="width:215px;flex:none"><div class="viz" data-viz="dep" data-type="SS"></div></div><div><b>Start-to-Start</b><p class="small" style="margin:2px 0">B chỉ bắt đầu khi A đã bắt đầu.</p><p class="small" style="margin:0"><span class="web">Web</span> Front-end bắt đầu khi back-end đã bắt đầu có API mẫu.</p></div></div>
+    <div class="card frag" data-s="4" style="display:flex;gap:12px;align-items:center;padding:10px 14px"><div style="width:215px;flex:none"><div class="viz" data-viz="dep" data-type="SF"></div></div><div><b>Start-to-Finish</b> <span class="tag gray">hiếm gặp</span><p class="small" style="margin:2px 0">A chỉ được kết thúc khi B đã bắt đầu.</p><p class="small" style="margin:0"><span class="web">Web</span> Ca trực cũ chỉ hết khi ca trực mới sau go-live bắt đầu (giao ca).</p></div></div>
+  </div>
+  <p class="small mt frag" data-s="1">Mũi tên đỏ chỉ rõ mốc nào của A ràng buộc mốc nào của B. Trong dự án web ta chủ yếu dùng Finish-to-Start.</p>
+  <aside class="notes">Đi nhanh qua bốn kiểu. Ví dụ giao ca để nhớ Start-to-Finish. Từ đây trở đi mặc định là Finish-to-Start.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Mở rộng: vì sao ta hay ước lượng sai?">
+  <h1 class="t">Mở rộng: vì sao ta hay ước lượng sai?</h1>
+  <p class="sub">Ba hiệu ứng tâm lý kinh điển trong quản lý thời gian (tìm hiểu thêm ngoài bài giảng).</p>
+  <div class="cols3">
+    <div class="card accent frag"><h3>Planning fallacy</h3><p class="small">Kahneman và Tversky (1979): con người hay ước lượng theo kịch bản tốt nhất và bỏ qua kinh nghiệm của các dự án trước.</p><p class="small"><b>Cách chữa:</b> so với dự án tương tự đã làm, dùng PERT, hỏi nhiều người.</p></div>
+    <div class="card accent frag"><h3>Định luật Parkinson</h3><p class="small">C. N. Parkinson (1955): công việc có xu hướng giãn ra cho vừa hết thời gian được giao.</p><p class="small"><b>Cách chữa:</b> chia mốc nhỏ, đặt timebox cho từng việc.</p></div>
+    <div class="card accent frag"><h3>Student syndrome</h3><p class="small">Chỉ bắt đầu khi sát hạn nên “đốt” hết slack ngay từ đầu rồi trễ.</p><p class="small"><b>Cách chữa:</b> đặt mốc trung gian, họp tiến độ ngắn mỗi tuần.</p></div>
+  </div>
+  <div class="note frag mt2"><b>Kỹ thuật ước lượng khác:</b> chuyên gia (expert judgment), tương tự (analogous), tham số hóa, và Planning Poker trong Agile.</div>
+  <aside class="notes">Liên hệ đời thường: ai cũng từng viết đồ án sát giờ nộp. Ba hiệu ứng này giải thích vì sao ước lượng bằng cảm tính thường quá lạc quan.</aside>
+</section>
+
+<section class="slide" data-member="1" data-title="Hoạt động 1: tự ước lượng bằng PERT">
+  <h1 class="t">Hoạt động 1: cùng ước lượng bằng PERT</h1>
+  <p class="sub">Việc cần ước lượng: <b>“làm file thuyết trình cho môn này”</b> (tính bằng ngày). Nhập O, M, P và xem thay đổi.</p>
+  <div class="viz" data-viz="pertcalc"></div>
+  <p class="small mt">Thử đổi P thật lớn để thấy ET bị kéo lệch về bên phải như thế nào.</p>
+  <aside class="notes">Mời 2-3 bạn đưa số. Nhập vào máy tính để lớp thấy ET và σ² thay đổi. Sau đó chuyển micro cho thành viên 2.</aside>
+</section>
+<!-- ============ PHẦN 2 ============ -->
+<section class="slide divider" data-member="2" data-title="Phần 2 – Sơ đồ mạng và đường găng">
+  <div class="big">2</div>
+  <div class="dt"><h1>Sơ đồ mạng và đường găng</h1><div class="who"><span data-mfull="2"></span></div>
+  <ul><li>Vẽ sơ đồ AON, tính TE (sớm nhất) và TL (trễ nhất)</li><li>Slack, việc găng và đường găng</li><li>Gantt chart và Resource chart</li><li>Hoạt động: tìm đường găng</li></ul></div>
+</section>
+
+<section class="slide" data-member="2" data-title="Sơ đồ mạng AON">
+  <h1 class="t">Sơ đồ mạng AON: mỗi node là một công việc</h1>
+  <p class="sub">Mũi tên chỉ sự phụ thuộc (và kết quả chuyển giao sang node kế). Hành động nằm trên node.</p>
+  <div class="viz" data-viz="network" data-mode="et" style="max-width:860px;margin:0 auto"></div>
+  <div class="note frag">Đọc sơ đồ: <b>A</b> xong thì <b>B, C, D</b> cùng bắt đầu được. <b>E</b> cần cả B và C; <b>F</b> cần cả C và D; <b>G</b> cần cả E và F.</div>
+  <aside class="notes">Đây chính là bảng phụ thuộc của dự án web, vẽ thành sơ đồ. Mỗi hộp ghi tên việc và ET đã ước lượng ở phần 1.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Tính thời gian hoàn thành sớm nhất (TE)">
+  <h1 class="t">Đi xuôi: thời gian hoàn thành sớm nhất (TE)</h1>
+  <div class="row" style="align-items:flex-start;gap:20px">
+    <div style="width:380px" class="col">
+      <div class="frame" style="font-size:21px;padding:12px 16px;box-shadow:6px 6px 0 var(--ink)">
+        <b>1.</b> Node đầu: <span class="math">TE₁ = ET₁</span><br>
+        <b>2.</b> Theo mũi tên:<br><span class="math">TEcuối = TEđầu + ETcuối</span><br>
+        <b>3.</b> Nhiều mũi tên chỉ đến:<br><span class="math">TEcuối = Max{TEđầu} + ETcuối</span></div>
+      <div class="card frag" data-s="6" style="border-left:8px solid var(--m1);font-size:20px"><b>Node E</b> có 2 mũi tên đến:<br><span class="math">TE = Max{8, 6} + 8 = <b class="blue">16</b></span><br><b>Node F</b>: <span class="math">Max{9, 6} + 3 = <b class="blue">12</b></span></div>
+    </div>
+    <div class="grow"><div class="viz" data-viz="network" data-mode="te"></div><p class="small center">Bấm → để hiện TE theo từng lớp: A, rồi B-C-D, rồi E-F, rồi G, rồi H.</p></div>
+  </div>
+  <div class="frame crit-f frag center mt" data-s="7" style="font-size:23px">TE của node cuối = <b>22 tuần</b> = thời gian ngắn nhất để hoàn thành dự án</div>
+  <aside class="notes">Đi từ trái sang phải, bấm từng bước. Chỗ dễ sai là node E, F, G có nhiều mũi tên đến: phải lấy Max, vì phải chờ việc chậm nhất.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Tính thời gian hoàn thành trễ nhất (TL)">
+  <h1 class="t">Đi ngược: thời gian hoàn thành trễ nhất (TL)</h1>
+  <div class="row" style="align-items:flex-start;gap:20px">
+    <div style="width:380px" class="col">
+      <div class="frame" style="font-size:21px;padding:12px 16px;box-shadow:6px 6px 0 var(--ink)">
+        <b>1.</b> Giả sử <span class="math">TL₈ = TE₈ = TE dự án</span><br>
+        <b>2.</b> Đi ngược mũi tên:<br><span class="math">TLđầu = TLcuối − ETcuối</span><br>
+        <b>3.</b> Nhiều mũi tên chỉ đi:<br><span class="math">TLđầu = Min{TLcuối − ETcuối}</span></div>
+      <div class="card frag" data-s="6" style="border-left:8px solid var(--m2);font-size:20px"><b>Node A</b> có 3 mũi tên đi:<br><span class="math">TL = Min{8−5, 8−3, 13−6}<br>= Min{3, 5, 7} = <b style="color:#D9480F">3</b></span></div>
+    </div>
+    <div class="grow"><div class="viz" data-viz="network" data-mode="tl"></div><p class="small center">TE (xanh) đã có; bấm → để hiện TL (cam) từ node cuối quay về node đầu.</p></div>
+  </div>
+  <aside class="notes">Đi ngược từ H. Chỗ dễ sai là node A: có 3 mũi tên đi nên lấy Min, vì phải kịp nhánh gấp nhất, ở đây là nhánh B.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Slack và đường găng">
+  <h1 class="t">Slack và đường găng (critical path)</h1>
+  <div class="viz" data-viz="cp-table"></div>
+  <div class="row mt" style="gap:22px;align-items:stretch">
+    <div class="frame frag" style="flex:1;font-size:21px;padding:10px 18px"><b class="math" style="font-size:26px">S = TL − TE</b><br>Slack: được phép trễ bao nhiêu mà <b>không</b> làm trễ dự án. Việc găng có S = 0.</div>
+    <div class="frame crit-f frag" style="flex:1;font-size:21px;padding:10px 18px"><b>Đường găng: A → B → E → G → H</b><br>Trọng lượng = 3 + 5 + 8 + 4 + 2 = <b>22 tuần</b> = thời gian của cả dự án.</div>
+  </div>
+  <p class="small frag mt">Dùng slack S bằng 1 trong 3 cách: làm bình thường rồi nghỉ S, bắt đầu trễ S, hoặc cho việc kéo dài thêm S.</p>
+  <aside class="notes">Đây là bảng quan trọng nhất của phần 2. Năm việc có S = 0 nằm trên đường găng. Việc có slack như D (4 tuần) có thể trễ mà dự án vẫn đúng hạn.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Gantt chart">
+  <h1 class="t">Gantt chart: lịch theo thời gian thực</h1>
+  <div class="viz" data-viz="gantt" data-mode="es"></div>
+  <p class="small center frag">Nét đứt xanh là khoảng slack: việc đó có thể trễ ngần ấy tuần mà dự án vẫn xong tuần 22.</p>
+  <aside class="notes">Gantt là cách trình bày lịch cho khách hàng. Việc đỏ là việc găng, đường xanh nét đứt là khoảng đệm. Chú ý ba việc song song B, C, D sau khi A xong.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Resource chart: nguồn lực theo tuần">
+  <h1 class="t">Resource chart: ai bận lúc nào?</h1>
+  <div class="viz" data-viz="resource" data-mode="before"></div>
+  <div class="frame crit-f frag center mt" style="font-size:22px">Tuần 3 đến 6 cần <b>5 người</b> nhưng đội chỉ có <b>4</b>: quá tải. <b>Phần 3</b> sẽ xử lý.</div>
+  <aside class="notes">Mỗi cột là số người cần trong một tuần, xếp chồng theo việc. Vùng đỏ nhạt là tuần vượt quá 4 người. Đây là cầu nối sang phần của thành viên 3.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Mở rộng: AON/AOA, float, công cụ">
+  <h1 class="t">Mở rộng: AON và AOA, hai loại float, công cụ</h1>
+  <div class="cols2" style="gap:20px">
+    <div class="card frag"><h3>AON và AOA</h3>
+      <table class="tight" style="font-size:16.5px"><tr><th></th><th>AON</th><th>AOA</th></tr>
+      <tr><td>Việc nằm ở</td><td>Node</td><td>Mũi tên</td></tr>
+      <tr><td>Mũi tên là</td><td>Phụ thuộc</td><td>Chính công việc</td></tr>
+      <tr><td>Việc “giả” (dummy)</td><td>Không cần</td><td>Có thể cần</td></tr>
+      <tr><td>Hiện nay</td><td>Phổ biến</td><td>Tài liệu cũ</td></tr></table></div>
+    <div class="card frag"><h3>Total float và Free float</h3>
+      <p class="small" style="margin-bottom:4px"><b>Total float</b> = slack ở bài: trễ mà không trễ dự án.<br><b>Free float</b>: trễ mà không đẩy việc đứng liền sau.</p>
+      <table class="tight" style="font-size:16.5px"><tr><th>Việc</th><th class="n">Total</th><th class="n">Free</th></tr><tr><td>C</td><td class="n">2</td><td class="n">2</td></tr><tr class="c"><td>D</td><td class="n">4</td><td class="n">0</td></tr></table>
+      <p class="tiny" style="margin-top:4px">D trễ 1 tuần thì F bị đẩy ngay (F bắt đầu sớm nhất tuần 9, đúng lúc D xong).</p></div>
+  </div>
+  <div class="note frag mt2"><b>Công cụ vẽ Gantt/đường găng:</b> MS Project, GanttProject (miễn phí), Jira hoặc Notion (chế độ Timeline), Excel hoặc Google Sheets.</div>
+  <aside class="notes">Hai điểm mở rộng: AOA là cách vẽ cũ, và free float khác total float. Ví dụ D rất hay: total float 4 nhưng free float 0.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Hoạt động 2: tìm đường găng">
+  <h1 class="t">Hoạt động 2: tìm đường găng</h1>
+  <div class="col" style="align-items:center">
+    <table class="ex" style="width:480px"><tr><th>Công việc</th><th>Thời gian</th><th>Việc trước</th></tr><tr><td class="n">a</td><td class="n">4 ngày</td><td class="n">—</td></tr><tr><td class="n">b</td><td class="n">5 ngày</td><td class="n">—</td></tr><tr><td class="n">c</td><td class="n">6 ngày</td><td class="n">a</td></tr><tr><td class="n">d</td><td class="n">3 ngày</td><td class="n">b</td></tr><tr><td class="n">e</td><td class="n">4 ngày</td><td class="n">b</td></tr><tr><td class="n">f</td><td class="n">7 ngày</td><td class="n">c, d</td></tr></table>
+    <p class="small mt">Hạn 3 phút. Vẽ AON rồi tính TE, TL, slack.</p>
+  </div>
+  <aside class="notes">Cho lớp 3 phút tự làm rồi chuyển sang slide sau để hiện đáp án (sơ đồ AON). Lưu ý đây là số liệu đã đổi so với bài trong tài liệu gốc: đường găng là a, c, f.</aside>
+</section>
+
+<section class="slide" data-member="2" data-title="Hoạt động 2: sơ đồ AON phóng to">
+  <h1 class="t" style="margin-bottom:2px">Sơ đồ AON hoạt động 2: tính TE rồi TL từng bước</h1>
+  <svg viewBox="0 0 900 460" style="width:100%;max-width:940px;margin:0 auto;display:block">
+    <defs>
+      <marker id="hb2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#46526D"/></marker>
+      <marker id="hb2c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#E4572E"/></marker>
+    </defs>
+    <!-- static grey edges -->
+    <line id="e-ac" x1="210" y1="150" x2="367" y2="80" stroke="#46526D" stroke-width="2.5" marker-end="url(#hb2g)"/>
+    <line x1="210" y1="320" x2="367" y2="220" stroke="#46526D" stroke-width="2.5" marker-end="url(#hb2g)"/>
+    <line x1="210" y1="320" x2="367" y2="360" stroke="#46526D" stroke-width="2.5" marker-end="url(#hb2g)"/>
+    <line id="e-cf" x1="490" y1="80" x2="657" y2="150" stroke="#46526D" stroke-width="2.5" marker-end="url(#hb2g)"/>
+    <line x1="490" y1="220" x2="657" y2="150" stroke="#46526D" stroke-width="2.5" marker-end="url(#hb2g)"/>
+    <!-- node boxes (static) -->
+    <rect x="90" y="118" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="104" y="156" font-size="27" font-weight="800" fill="#14213D">a</text>
+    <text x="196" y="156" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=4</text>
+    <rect x="90" y="288" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="104" y="326" font-size="27" font-weight="800" fill="#14213D">b</text>
+    <text x="196" y="326" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=5</text>
+    <rect x="370" y="48" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="384" y="86" font-size="27" font-weight="800" fill="#14213D">c</text>
+    <text x="476" y="86" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=6</text>
+    <rect x="370" y="188" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="384" y="226" font-size="27" font-weight="800" fill="#14213D">d</text>
+    <text x="476" y="226" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=3</text>
+    <rect x="370" y="328" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="384" y="366" font-size="27" font-weight="800" fill="#14213D">e</text>
+    <text x="476" y="366" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=4</text>
+    <rect x="660" y="118" width="120" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="674" y="156" font-size="27" font-weight="800" fill="#14213D">f</text>
+    <text x="766" y="156" text-anchor="end" font-size="17" font-weight="700" fill="#14213D">ET=7</text>
+    <!-- TE, revealed one at a time, in forward topological order -->
+    <text class="frag" x="150" y="108" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=4</text>
+    <text class="frag" x="150" y="278" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=5</text>
+    <text class="frag" x="430" y="38" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=10</text>
+    <text class="frag" x="430" y="178" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=8</text>
+    <text class="frag" x="430" y="318" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=9</text>
+    <text class="frag" x="720" y="108" text-anchor="middle" font-size="21" font-weight="800" fill="#2F6FED">TE=17</text>
+    <!-- TL, revealed one at a time, in backward order: f, e, c, d, b, a -->
+    <text class="frag" x="720" y="202" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=17</text>
+    <text class="frag" x="430" y="412" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=17</text>
+    <text class="frag" x="430" y="132" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=10</text>
+    <text class="frag" x="430" y="272" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=10</text>
+    <text class="frag" x="150" y="372" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=7</text>
+    <text class="frag" x="150" y="202" text-anchor="middle" font-size="19" font-weight="800" fill="#D9480F">TL=4</text>
+    <!-- Slack, all at once -->
+    <g class="frag">
+      <text x="150" y="222" text-anchor="middle" font-size="16" font-weight="700" fill="#E4572E">S=0</text>
+      <text x="150" y="392" text-anchor="middle" font-size="16" font-weight="700" fill="#46526D">S=2</text>
+      <text x="430" y="152" text-anchor="middle" font-size="16" font-weight="700" fill="#E4572E">S=0</text>
+      <text x="430" y="292" text-anchor="middle" font-size="16" font-weight="700" fill="#46526D">S=2</text>
+      <text x="430" y="432" text-anchor="middle" font-size="16" font-weight="700" fill="#46526D">S=8</text>
+      <text x="720" y="222" text-anchor="middle" font-size="16" font-weight="700" fill="#E4572E">S=0</text>
+    </g>
+    <!-- critical path highlight, appears after all numbers -->
+    <g class="frag">
+      <line x1="210" y1="150" x2="367" y2="80" stroke="#E4572E" stroke-width="5" marker-end="url(#hb2c)"/>
+      <line x1="490" y1="80" x2="657" y2="150" stroke="#E4572E" stroke-width="5" marker-end="url(#hb2c)"/>
+      <rect x="90" y="118" width="120" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+      <rect x="370" y="48" width="120" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+      <rect x="660" y="118" width="120" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+    </g>
+  </svg>
+  <div class="frame crit-f frag center" style="font-size:19px;padding:6px 18px;margin-top:4px">Đường găng: <b>a → c → f</b>, dự án mất <b>17 ngày</b>. Việc <b>b, d, e</b> có slack, có thể trễ mà không ảnh hưởng tiến độ.</div>
+  <aside class="notes">Mỗi lần bấm hiện một số: TE lần lượt a, b, c, d, e, f (đi xuôi, Max khi có nhiều mũi tên đến); rồi TL lần lượt f, e, c, d, b, a (đi ngược, Min khi có nhiều mũi tên đi). Cuối cùng hiện Slack và tô đỏ đường găng a-c-f.</aside>
+</section>
+<!-- ============ PHẦN 3 ============ -->
+<section class="slide divider" data-member="3" data-title="Phần 3 – Cân bằng nguồn lực và làm gấp">
+  <div class="big">3</div>
+  <div class="dt"><h1>Cân bằng nguồn lực và làm gấp</h1><div class="who"><span data-mfull="3"></span></div>
+  <ul><li>Resource leveling: 4 cách điều chỉnh nguồn lực</li><li>Làm gấp (crashing): rút ngắn dự án với chi phí thấp nhất</li><li>Luật Brooks: thêm người có luôn nhanh hơn?</li><li>Hoạt động: “Bạn là PM”</li></ul></div>
+</section>
+
+<section class="slide" data-member="3" data-title="Resource leveling: 4 cách điều chỉnh">
+  <h1 class="t">Resource leveling: cân bằng giữa việc và người</h1>
+  <p class="sub">Điều chỉnh tăng hoặc giảm nguồn lực cho công việc (hoặc ngược lại) để việc và người khớp nhau.</p>
+  <div class="cols2" style="gap:16px">
+    <div class="card accent frag"><h3>1. Điều chuyển công việc</h3><p class="small">Giữ nguyên cách bố trí người; chuyển việc từ nơi quá tải sang nơi đang dư.</p><p class="small"><span class="web">Web</span> Dời việc D (soạn nội dung) sang muộn hơn.</p></div>
+    <div class="card accent frag"><h3>2. Điều chuyển nguồn lực</h3><p class="small">Giữ nguyên cách bố trí việc; chuyển người từ nơi dư sang việc đang gây quá tải.</p><p class="small"><span class="web">Web</span> Designer xong B thì sang hỗ trợ soạn nội dung.</p></div>
+    <div class="card accent frag"><h3>3. Tăng nguồn lực cho việc găng</h3><p class="small">Để việc găng xong sớm hơn (giảm ET), rút ngắn cả dự án. Đây là kỹ thuật <b>làm gấp (crashing)</b>.</p><p class="small"><span class="web">Web</span> Thêm lập trình viên cho việc E.</p></div>
+    <div class="card accent frag"><h3>4. Giảm nguồn lực nơi slack lớn</h3><p class="small">Bớt người ở việc có độ thư giãn cao để tiết kiệm.</p><p class="small"><span class="web">Web</span> D có slack 4 tuần, không cần dồn nhiều người.</p></div>
+  </div>
+  <aside class="notes">Bốn cách trong bài giảng. Cách 1 và 2 là cân bằng tải, cách 3 là rút ngắn thời gian, cách 4 là tiết kiệm. Ví dụ tiếp theo dùng cách 1.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Demo: cân bằng tải bằng cách dời việc D">
+  <h1 class="t">Demo: dời việc D để hết quá tải</h1>
+  <div style="position:relative"><div class="viz" data-viz="resource" data-mode="before"></div><div class="viz frag" data-s="1" style="position:absolute;inset:0;background:var(--paper)" data-viz="resource" data-mode="level"></div></div>
+  <div class="frame green frag center mt" data-s="1" style="font-size:22px">Dời <b>D</b> từ tuần 3 sang tuần 6 (dùng 3 trong 4 tuần slack), kéo theo <b>F</b> từ tuần 9 sang 12.<br>Đỉnh tải <b>5 → 4 người</b>, dự án vẫn <b>22 tuần</b>.</div>
+  <aside class="notes">Bấm một lần để chuyển từ biểu đồ trước sang sau khi cân bằng. D có slack 4 nên dời được 3 tuần mà không làm trễ gì. Nếu D dời 5 tuần thì mới ảnh hưởng.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Lịch sau khi cân bằng">
+  <h1 class="t">Lịch sau khi cân bằng: D và F dời, dự án vẫn 22 tuần</h1>
+  <div class="viz" data-viz="gantt" data-mode="level"></div>
+  <p class="small center frag">Điều kiện kiểm tra: D xong tuần 12 (≤ TL = 13), F xong tuần 15 (≤ TL = 16), G vẫn bắt đầu tuần 16.</p>
+  <aside class="notes">Luôn kiểm tra lại sau khi dời: việc dời phải kết thúc không muộn hơn TL của nó. Cả D và F đều còn dư 1 tuần.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Bài toán làm gấp">
+  <h1 class="t">Bài toán làm gấp (crashing)</h1>
+  <p class="sub">Muốn dự án xong sớm hơn một lượng Δt, nhưng tốn thêm tiền ít nhất.</p>
+  <div class="frame center" style="font-size:27px"><span class="math">T<sub>mới</sub> ≤ T<sub>cũ</sub> − Δt</span> &nbsp; và &nbsp; <span class="math">ΔCost = min ( Σ C<sub>i</sub> )</span><br><span style="font-size:18px">C<sub>i</sub> là chi phí làm gấp công việc i</span></div>
+  <div class="note mt frag"><span class="web">Web</span> Khách muốn web chạy trước tuần 20, nghĩa là <b>Δt = 2 tuần</b> (22 → 20).</div>
+  <div class="cols2 mt" style="gap:18px">
+    <div class="card accent frag"><h3>Chỉ rút việc găng</h3><p class="small">Việc quyết định thời gian dự án là việc găng. Rút việc không găng chỉ tốn tiền mà dự án không ngắn đi.</p></div>
+    <div class="card accent frag"><h3>Rút xong, đường găng có thể đổi</h3><p class="small">Rút 1 việc găng có thể làm nó hết găng, và việc khác thành găng. Phải tính lại sau mỗi lần rút.</p></div>
+  </div>
+  <aside class="notes">Hai yêu cầu của bài toán: rút đủ Δt và chi phí thêm nhỏ nhất. Hai cạm bẫy: rút nhầm việc không găng, và quên rằng đường găng có thể đổi.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Dữ liệu làm gấp của dự án web">
+  <h1 class="t">Dữ liệu làm gấp của dự án web</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:640px"><div class="viz" data-viz="crash-table"></div></div>
+    <div class="grow"><p class="small" style="margin-bottom:0"><b>Chi phí rút 1 tuần</b> (đỏ = việc găng)</p><div class="viz" data-viz="cost-bars"></div></div>
+  </div>
+  <div class="frame frag center mt" style="font-size:21px;padding:10px 20px">Trong các việc găng, rẻ nhất lần lượt là <b>G (+3)</b>, <b>B (+4)</b>, <b>E (+5)</b>. C và F rẻ hơn nhưng <b>không găng</b>: không dùng được. <span style="font-size:16px">(tiền: triệu đồng, chi phí tăng đều theo số tuần rút)</span></div>
+  <aside class="notes">Đây là cái bẫy: C và F có giá rẻ nhất nhưng không nằm trên đường găng. Chỉ chọn trong các cột màu đỏ.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Làm gấp từng bước: 22 xuống 20 tuần">
+  <h1 class="t">Làm gấp từng bước: 22 → 20 tuần</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:560px" class="col">
+      <div class="card frag" style="border-left:8px solid var(--m3)"><b>Bước 1.</b> Rút <b>G</b>: 4 → 3 tuần (+3 triệu)<br><span class="small">Dự án còn <b>21</b> tuần, đường găng vẫn A-B-E-G-H.</span></div>
+      <div class="card frag" style="border-left:8px solid var(--m3)"><b>Bước 2.</b> Rút <b>B</b>: 5 → 4 tuần (+4 triệu)<br><span class="small">Dự án còn <b>20</b> tuần. Đường A-C-E-G-H dài 19, chưa thành găng.</span></div>
+      <div class="frame green frag" style="font-size:23px">Tổng chi phí tăng <b>+7 triệu</b>, dự án xong <b>tuần 20</b>.</div>
+    </div>
+    <div class="grow frag" data-s="3"><p class="small" style="margin-bottom:6px"><b>So sánh các phương án rút 2 tuần</b></p>
+      <table class="tight"><tr><th>Phương án</th><th class="n">Chi phí thêm</th></tr><tr style="background:#DDF5EC"><td><b>B (1 tuần) + G (1 tuần)</b></td><td class="n"><b>+7 triệu ✓</b></td></tr><tr><td>E (1 tuần) + G</td><td class="n">+8</td></tr><tr><td>A + G, hoặc B + E</td><td class="n">+9</td></tr><tr><td>E rút 2 tuần</td><td class="n">+10</td></tr><tr><td>Rút C hoặc F (không găng)</td><td class="n crit">dự án vẫn 22 tuần</td></tr></table>
+      <p class="tiny mt">Đã kiểm tra bằng cách thử mọi phương án rút.</p></div>
+  </div>
+  <aside class="notes">Làm theo nguyên tắc: mỗi bước rút việc găng rẻ nhất, rồi tính lại đường găng. Cuối cùng so sánh với các phương án khác để chắc chắn 7 triệu là thấp nhất.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Thuật toán duyệt cây phương án làm gấp">
+  <h1 class="t">Duyệt cây phương án làm gấp (ví dụ trong bài giảng)</h1>
+  <p class="sub">Dự án A–G đang mất 13 tháng, cần xong trong <b>9 tháng</b> với chi phí tăng ít nhất. Mở nhánh rẻ nhất trước, bỏ nhánh trùng.</p>
+  <div class="row" style="gap:16px;align-items:flex-start"><div style="width:880px"><div class="viz" data-viz="tree"></div></div>
+  <div class="grow"><table class="tight" style="font-size:16px"><tr><th>Rút</th><th class="n">Thêm</th></tr><tr><td>B: 3→1</td><td class="n">+8</td></tr><tr><td>C: 5→4</td><td class="n">+18</td></tr><tr><td>F: 3→1</td><td class="n">+6</td></tr><tr><td>G: 2→1</td><td class="n">+30</td></tr></table><p class="tiny mt">Việc găng ban đầu: B, C, F, G.</p></div></div>
+  <aside class="notes">Đây là ví dụ trong bài giảng. Bấm từng bước: mở nhánh F, rồi nhánh B, rồi chốt lời giải rút F và B với chi phí +14. Nhánh BF bị bỏ vì trùng với FB.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Mở rộng: fast-tracking và luật Brooks">
+  <h1 class="t">Mở rộng: không chỉ có “thêm tiền, thêm người”</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:560px" class="col">
+      <div class="card accent frag"><h3>Crashing</h3><p class="small">Thêm nguồn lực cho việc găng. Tốn thêm tiền nhưng cấu trúc lịch giữ nguyên.</p></div>
+      <div class="card accent frag"><h3>Fast-tracking</h3><p class="small">Làm song song những việc vốn nối tiếp. Không tốn thêm nguồn lực nhưng tăng nguy cơ phải làm lại.</p><p class="small"><span class="web">Web</span> Bắt đầu nhập liệu (F) khi D mới xong phần lớn bài.</p></div>
+    </div>
+    <div class="grow frag"><div class="frame" style="font-size:20px;padding:12px 16px;box-shadow:6px 6px 0 var(--ink)"><b>Luật Brooks</b> (F. Brooks, <i>The Mythical Man-Month</i>, 1975): thêm người vào dự án phần mềm đang trễ thường làm nó trễ thêm.</div>
+      <p class="small mt" style="margin-bottom:0">Số kênh trao đổi giữa n người = n(n−1)/2:</p><div class="viz" data-viz="channels" style="max-width:430px"></div></div>
+  </div>
+  <p class="small frag mt">Kết luận: crashing hiệu quả với việc chia nhỏ được (soạn nội dung, nhập liệu), kém hiệu quả với việc lõi như lập trình.</p>
+  <aside class="notes">Thêm người thì cần đào tạo và họp nhiều hơn. 4 người có 6 kênh, 8 người có 28 kênh. Vì vậy tăng gấp đôi người không rút ngắn một nửa thời gian.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Hoạt động 3: Bạn là PM">
+  <h1 class="t">Hoạt động 3: Bạn là PM</h1>
+  <div class="col" style="align-items:center">
+    <table class="ex" style="width:620px"><tr><th>Việc</th><th>Găng?</th><th class="n">Thời gian</th><th class="n">Làm gấp</th><th class="n">Thêm</th></tr><tr class="c"><td>A</td><td>Có</td><td class="n">4 tuần</td><td class="n">3 tuần</td><td class="n">+6 tr</td></tr><tr class="c"><td>B</td><td>Có</td><td class="n">6 tuần</td><td class="n">4 tuần</td><td class="n">+10 tr</td></tr><tr class="c"><td>C</td><td>Có</td><td class="n">5 tuần</td><td class="n">4 tuần</td><td class="n">+3 tr</td></tr><tr><td>X</td><td>Không</td><td class="n">3 tuần</td><td class="n">2 tuần</td><td class="n">+1 tr</td></tr></table>
+    <div class="note mt" style="max-width:620px"><b>Đề:</b> đường găng duy nhất là A → B → C (15 tuần). Cần rút còn <b>13 tuần</b> (rút 2 tuần). Rút việc nào để rẻ nhất? (giả sử chi phí tăng đều theo số tuần rút, trong giới hạn Làm gấp)</div>
+  </div>
+  <aside class="notes">Cho lớp 2 phút chọn. Nhiều bạn sẽ chọn X vì rẻ nhất: đó là cái bẫy, vì X không nằm trên đường găng nên rút X không làm dự án ngắn lại. Đáp án ở 2 slide sau.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Hoạt động 3: chi phí rút mỗi tuần">
+  <h1 class="t" style="margin-bottom:8px">Bước 1: tính chi phí mỗi tuần rút (crashing)</h1>
+  <div class="frame center" style="font-size:23px;padding:10px 22px">
+    <span class="math">Chi phí / tuần = Chi phí thêm ÷ (Thời gian bình thường − Thời gian làm gấp)</span>
+  </div>
+  <div class="tbl-wrap frag" style="margin-top:8px"><table class="tight">
+    <tr><th>Việc</th><th class="n">Thường → Gấp</th><th class="n">Chi phí thêm</th><th class="n">Phép tính</th><th class="n">Chi phí/tuần</th><th class="n">Trên đường găng?</th></tr>
+    <tr class="c frag"><td><b>A</b></td><td class="n">4 → 3</td><td class="n">+6 tr</td><td class="n">6 ÷ (4−3)</td><td class="n"><b>6 tr</b></td><td class="n">Có</td></tr>
+    <tr class="c frag"><td><b>B</b></td><td class="n">6 → 4</td><td class="n">+10 tr</td><td class="n">10 ÷ (6−4)</td><td class="n"><b>5 tr</b></td><td class="n">Có</td></tr>
+    <tr class="c frag"><td><b>C</b></td><td class="n">5 → 4</td><td class="n">+3 tr</td><td class="n">3 ÷ (5−4)</td><td class="n"><b>3 tr</b></td><td class="n">Có</td></tr>
+    <tr class="frag"><td><b>X</b></td><td class="n">3 → 2</td><td class="n">+1 tr</td><td class="n">1 ÷ (3−2)</td><td class="n">1 tr</td><td class="n">Không</td></tr>
+  </table></div>
+  <div class="viz frag" data-viz="crash3-bars" style="max-width:600px;margin:8px auto 0"></div>
+  <div class="note frag" style="margin-top:8px">X rẻ nhất (1 tr/tuần) nhưng <b>không nằm trên đường găng</b> → rút X không rút ngắn dự án, nên bị loại dù rẻ. Chỉ so sánh chi phí giữa các việc găng A, B, C.</div>
+  <aside class="notes">Công thức crashing chuẩn: chi phí thêm chia cho số tuần có thể rút tối đa. Nhấn mạnh cái bẫy: chỉ được rút việc đang nằm trên đường găng.</aside>
+</section>
+
+<section class="slide" data-member="3" data-title="Hoạt động 3: chọn phương án rẻ nhất">
+  <h1 class="t">Bước 2: rút 2 tuần với chi phí thấp nhất</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:430px" class="col">
+      <div class="card frag" style="border-left:8px solid var(--m2)"><b>Bước 1:</b> rút việc găng rẻ nhất trước — <b>C</b> (3 tr/tuần), tối đa được 1 tuần (5→4).<br><span class="math">Dự án: 15 − 1 = <b>14 tuần</b></span>. Còn cần rút thêm 1 tuần.</div>
+      <div class="card frag" style="border-left:8px solid var(--m2)"><b>Bước 2:</b> C đã hết giới hạn, rẻ nhất tiếp theo là <b>B</b> (5 tr/tuần), rút 1 tuần (6→5).<br><span class="math">Dự án: 14 − 1 = <b>13 tuần</b></span> → đạt mục tiêu.</div>
+      <div class="frame crit-f frag center" style="font-size:22px"><span class="math">Tổng chi phí = 3 + 5 = <b>8 triệu</b></span></div>
+    </div>
+    <div class="grow col">
+      <div class="tbl-wrap frag"><table class="tight"><tr><th>Phương án rút 2 tuần</th><th class="n">Chi phí</th><th></th></tr>
+        <tr class="c"><td>C (1 tuần) + B (1 tuần)</td><td class="n"><b>8 tr</b></td><td class="n ok">★ rẻ nhất</td></tr>
+        <tr><td>A (1 tuần) + C (1 tuần)</td><td class="n">9 tr</td><td></td></tr>
+        <tr><td>B (2 tuần)</td><td class="n">10 tr</td><td></td></tr>
+      </table></div>
+      <div class="viz frag" data-viz="crash3-timeline"></div>
+    </div>
+  </div>
+  <aside class="notes">Logic tham lam (greedy): mỗi bước luôn rút việc găng rẻ nhất còn khả năng, rồi tính lại. Ở đây đường găng không đổi trong suốt quá trình nên không cần kiểm tra lại đường găng mới. So sánh bảng bên phải cho thấy C+B là rẻ nhất trong các cách rút đủ 2 tuần.</aside>
+</section>
+<!-- ============ PHẦN 4 ============ -->
+<section class="slide divider" data-member="4" data-title="Phần 4 – PERT, xác suất và rủi ro">
+  <div class="big">4</div>
+  <div class="dt"><h1>PERT: xác suất và rủi ro thời gian</h1><div class="who"><span data-mfull="4"></span></div>
+  <ul><li>Từ CPM sang PERT: vì sao cần 3 ước lượng</li><li>Phương sai, độ lệch chuẩn, cộng trên đường găng</li><li>Z-score và xác suất hoàn thành đúng hạn</li><li>Hạn chế của PERT và mô phỏng Monte Carlo</li></ul></div>
+</section>
+
+<section class="slide" data-member="4" data-title="Từ CPM sang PERT">
+  <h1 class="t">Từ CPM sang PERT: vì sao cần 3 ước lượng?</h1>
+  <div class="row" style="gap:22px;align-items:stretch">
+    <div class="card frag" style="width:330px"><h3>CPM</h3><p class="center" style="font-size:19px;color:var(--ink2)">“Tích hợp chấm phát âm AI mất…”</p><p class="center" style="font-size:54px;font-weight:800;margin:6px 0 0">6 ngày</p><p class="center small">Một con số cố định, không nói gì về rủi ro.</p></div>
+    <div class="card frag grow"><h3>PERT</h3><p style="font-size:19px;color:var(--ink2);margin-bottom:0">“Có thể dao động”: o = 4, m = 6, p = 10 ngày</p><div class="viz" data-viz="beta" data-o="4" data-m="6" data-p="10" data-w="640" data-h="270"></div></div>
+  </div>
+  <div class="frame frag mt center" style="font-size:23px"><span class="math">tₑ = (o + 4m + p) / 6 = (4 + 24 + 10) / 6 = <b class="crit">6.33 ngày</b></span> &nbsp; | &nbsp; <span class="math">σ² = ((p − o)/6)² = <b>1.00</b></span></div>
+  <aside class="notes">CPM chỉ có một con số. PERT cho cả khoảng dao động, từ đó đo được rủi ro. Công thức tₑ đã học ở phần 1, bây giờ thêm phương sai.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Phương sai và độ lệch chuẩn">
+  <h1 class="t">Phương sai: đo rủi ro thời gian</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:430px" class="col">
+      <div class="frame" style="font-size:25px"><span class="math">σ² = ((p − o) / 6)²</span><br><span class="math">σ = √σ²</span></div>
+      <p class="small frag"><b>Phương sai</b> đo mức phân tán quanh giá trị trung bình: càng lớn càng khó dự đoán. <b>Độ lệch chuẩn</b> là căn bậc hai của nó, cùng đơn vị (ngày, tuần) nên dễ hiểu hơn.</p>
+    </div>
+    <div class="grow"><div class="viz" data-viz="beta2"></div></div>
+  </div>
+  <div class="tbl-wrap frag mt"><table class="tight"><tr><th>Việc (cùng trung bình 5 ngày)</th><th class="n">o</th><th class="n">m</th><th class="n">p</th><th class="n">tₑ</th><th class="n">σ²</th></tr><tr><td>Chỉnh CSS trang chủ</td><td class="n">4</td><td class="n">5</td><td class="n">6</td><td class="n">5</td><td class="n">0.11</td></tr><tr class="c"><td>Tích hợp chấm phát âm AI</td><td class="n">2</td><td class="n">5</td><td class="n">8</td><td class="n">5</td><td class="n">1.00</td></tr></table></div>
+  <div class="note frag mt">σ² càng lớn thì độ không chắc chắn càng cao: cần buffer hoặc deadline an toàn hơn. Việc thứ hai rủi ro gấp <b>9 lần</b>.</div>
+  <aside class="notes">Hai việc có cùng trung bình 5 ngày nhưng khoảng dao động khác nhau. Việc thứ hai có phương sai gấp 9 lần, nên nếu cam kết đúng 5 ngày thì rất dễ trễ.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Cộng trên đường găng: từ việc đến dự án">
+  <h1 class="t">Cộng trên đường găng: từ công việc đến dự án</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:700px"><div class="viz" data-viz="crit-sum"></div><p class="tiny mt frag" data-s="6">Chỉ cộng các việc trên đường găng đang xét, và giả sử các việc độc lập nhau.</p></div>
+    <div class="grow col">
+      <div class="frame frag" data-s="6" style="font-size:23px"><span class="math">μ = Σ tₑ = <b>22 tuần</b></span></div>
+      <div class="frame frag" data-s="6" style="font-size:23px"><span class="math">σ² = Σ σ² = <b>5.22</b></span></div>
+      <div class="frame crit-f frag" data-s="6" style="font-size:23px"><span class="math">σ = √5.22 = <b>2.29 tuần</b></span></div>
+    </div>
+  </div>
+  <aside class="notes">Bấm từng hàng để cộng. Chú ý: cộng cả tₑ và σ² trên đường găng, nhưng độ lệch chuẩn của dự án là căn bậc hai của tổng phương sai chứ không phải tổng các σ.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Z-score và xác suất đúng hạn">
+  <h1 class="t">Z-score: xác suất xong đúng hạn là bao nhiêu?</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:350px" class="col">
+      <div class="frame center" style="font-size:30px"><span class="math">Z = (D − μ) / σ</span></div>
+      <p class="small"><b>D</b>: deadline cam kết<br><b>μ</b> = 22 tuần, <b>σ</b> = 2.29 tuần</p>
+      <div class="card frag" style="border-left:8px solid var(--m4);font-size:19px"><b>Ví dụ D = 24:</b><br><span class="math">Z = (24 − 22)/2.29 = 0.88</span><br>Tra bảng: Φ(0.88) ≈ 0.81<br>→ khoảng <b class="ok">81%</b> xong đúng hạn.</div>
+    </div>
+    <div class="grow"><div class="viz" data-viz="normal"></div></div>
+  </div>
+  <aside class="notes">Kéo thanh trượt để lớp thấy vùng xanh (xác suất xong đúng hạn) lớn dần. Tại D = 22 là 50%, tức là cam kết đúng bằng trung bình thì tung đồng xu.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Chọn deadline cam kết">
+  <h1 class="t">So sánh nhiều deadline để ra quyết định</h1>
+  <div class="viz" data-viz="deadline-table"></div>
+  <div class="frame green frag mt" data-s="7" style="font-size:22px"><b>Muốn ≈ 95%?</b> <span class="math">D = μ + 1.645σ = 22 + 1.645 × 2.29 ≈ 25.8</span> → cam kết <b>26 tuần</b> (xác suất ≈ 96%).</div>
+  <aside class="notes">Đây là slide ra quyết định. Cùng một dự án, cam kết 22 tuần thì 50% trễ, cam kết 26 tuần chỉ còn khoảng 4%. Chọn mức nào tùy hợp đồng có phạt trễ nặng hay không.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Kiểm chứng PERT bằng Monte Carlo">
+  <h1 class="t">Kiểm chứng PERT bằng mô phỏng Monte Carlo</h1>
+  <ul class="dots" style="font-size:20px;margin-bottom:4px"><li>PERT chỉ xét <b>một</b> đường găng; khi nhiều đường gần găng, nó có xu hướng hơi lạc quan.</li><li class="frag">Monte Carlo: bốc ngẫu nhiên thời gian từng việc theo o-m-p, tính lại cả mạng, lặp 10.000 lần.</li></ul>
+  <div class="viz frag mt" data-viz="mc"></div>
+  <div class="note frag mt" style="font-size:18px;padding:6px 14px">Với dự án này PERT chỉ chênh vài điểm %, nên dùng được. Điểm hơn của Monte Carlo: cho cả hình dạng phân bố, không cần giả định một đường găng cố định.</div>
+  <aside class="notes">Bấm nút để chạy mô phỏng, đổi sang kịch bản sau làm gấp để thấy hai đường găng gần nhau. Kết quả mô phỏng và PERT khá sát, nhưng mô phỏng thường nhỉnh hơn một chút về thời gian trung bình khi nhiều đường gần găng.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Mở rộng: critical chain, buffer, Agile">
+  <h1 class="t">Mở rộng: quản lý rủi ro thời gian bằng buffer</h1>
+  <div class="cols3">
+    <div class="card accent frag"><h3>Critical Chain</h3><p class="small">Goldratt (1997): đừng giấu dự phòng trong từng việc, vì Parkinson và student syndrome làm nó bốc hơi. Gom lại thành <b>một buffer chung</b> cho dự án.</p></div>
+    <div class="card accent frag"><h3>Monte Carlo</h3><p class="small">Cho khoảng tin cậy và xác suất mà không cần giả định một đường găng cố định. Công cụ: @RISK, Excel, hoặc vài dòng code.</p></div>
+    <div class="card accent frag"><h3>Agile: timebox</h3><p class="small">Cố định thời gian (sprint 1 đến 4 tuần) và co giãn phạm vi, thay vì cố định phạm vi rồi đoán thời gian.</p></div>
+  </div>
+  <div class="note frag mt2"><span class="web">Web</span> Với dự án web này: cam kết 26 tuần với khách, nhưng nội bộ chạy theo mốc 22 tuần và giữ 4 tuần làm buffer chung.</div>
+  <aside class="notes">Ba hướng mở rộng. Ý chính: PERT giúp biết rủi ro, còn buffer là cách hành động trước rủi ro đó.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Hoạt động 4: PERT trên mạng 4 việc">
+  <h1 class="t">Hoạt động 4: xác suất hoàn thành đúng hạn</h1>
+  <div class="col" style="align-items:center">
+    <table class="ex" style="width:500px"><tr><th>CV</th><th>Tiền nhiệm</th><th class="n">o</th><th class="n">m</th><th class="n">p</th></tr><tr><td>A</td><td>—</td><td class="n">2</td><td class="n">3</td><td class="n">4</td></tr><tr><td>B</td><td>A</td><td class="n">2</td><td class="n">4</td><td class="n">6</td></tr><tr><td>C</td><td>A</td><td class="n">3</td><td class="n">6</td><td class="n">12</td></tr><tr><td>D</td><td>B, C</td><td class="n">1</td><td class="n">2</td><td class="n">3</td></tr></table>
+    <ol class="mt" style="padding-left:26px;max-width:500px;font-size:23px;line-height:1.6"><li>Tính tₑ và σ² mỗi việc</li><li>Vẽ AON, tìm đường găng theo tₑ</li><li>Tính μ, σ của dự án</li><li>Tính P(T ≤ 13 ngày)</li></ol>
+  </div>
+  <aside class="notes">Cho lớp 4 phút tự làm rồi chuyển các slide sau để xem lời giải từng bước. Số liệu đã đổi so với bài gốc: ở đây việc C rủi ro cao nên đường găng là A, C, D và xác suất xong trong 13 ngày khoảng 83%.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Hoạt động 4: tính tₑ và σ² từng việc">
+  <h1 class="t">Bước 1: tính tₑ và σ² cho từng việc</h1>
+  <div class="frame center" style="font-size:24px">
+    <span class="math">tₑ = (o + 4m + p) / 6</span> &nbsp;&nbsp; <span class="math">σ² = ((p − o) / 6)²</span>
+  </div>
+  <div class="cols2 mt" style="gap:14px">
+    <div class="card frag" style="border-left:8px solid var(--m1);padding:12px 18px"><b>A</b> (o=2, m=3, p=4)<br><span class="math">tₑ = (2 + 4×3 + 4)/6 = 18/6 = <b class="blue">3</b></span><br><span class="math">σ² = ((4−2)/6)² = <b>0.11</b></span></div>
+    <div class="card frag" style="border-left:8px solid var(--m1);padding:12px 18px"><b>B</b> (o=2, m=4, p=6)<br><span class="math">tₑ = (2 + 4×4 + 6)/6 = 24/6 = <b class="blue">4</b></span><br><span class="math">σ² = ((6−2)/6)² = <b>0.44</b></span></div>
+    <div class="card frag" style="border-left:8px solid var(--crit);padding:12px 18px"><b>C</b> (o=3, m=6, p=12)<br><span class="math">tₑ = (3 + 4×6 + 12)/6 = 39/6 = <b class="crit">6.5</b></span><br><span class="math">σ² = ((12−3)/6)² = <b>2.25</b></span></div>
+    <div class="card frag" style="border-left:8px solid var(--m1);padding:12px 18px"><b>D</b> (o=1, m=2, p=3)<br><span class="math">tₑ = (1 + 4×2 + 3)/6 = 12/6 = <b class="blue">2</b></span><br><span class="math">σ² = ((3−1)/6)² = <b>0.11</b></span></div>
+  </div>
+  <div class="tbl-wrap frag mt" style="max-width:600px;margin-left:auto;margin-right:auto"><table class="tight"><tr><th>Việc</th><th class="n">A</th><th class="n">B</th><th class="n">C</th><th class="n">D</th></tr><tr><td>tₑ</td><td class="n">3</td><td class="n">4</td><td class="n"><b>6.5</b></td><td class="n">2</td></tr><tr><td>σ²</td><td class="n">0.11</td><td class="n">0.44</td><td class="n"><b>2.25</b></td><td class="n">0.11</td></tr></table></div>
+  <aside class="notes">Mỗi việc thế số vào hai công thức PERT đã học ở phần 4. Chú ý C có p rất lớn (12) so với o, m nên tₑ và σ² đều lớn: đây là việc rủi ro cao nhất.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Hoạt động 4: vẽ AON, tìm đường găng">
+  <h1 class="t" style="margin-bottom:2px">Bước 2: vẽ AON, tìm đường găng theo tₑ</h1>
+  <svg viewBox="0 0 860 420" style="width:100%;max-width:940px;margin:0 auto;display:block">
+    <defs>
+      <marker id="h4g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#46526D"/></marker>
+      <marker id="h4c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#E4572E"/></marker>
+    </defs>
+    <line x1="215" y1="220" x2="362" y2="110" stroke="#46526D" stroke-width="2.5" marker-end="url(#h4g)"/>
+    <line x1="215" y1="220" x2="362" y2="330" stroke="#46526D" stroke-width="2.5" marker-end="url(#h4g)"/>
+    <line x1="495" y1="110" x2="642" y2="220" stroke="#46526D" stroke-width="2.5" marker-end="url(#h4g)"/>
+    <line x1="495" y1="330" x2="642" y2="220" stroke="#46526D" stroke-width="2.5" marker-end="url(#h4g)"/>
+    <rect x="85" y="188" width="130" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="100" y="228" font-size="30" font-weight="800" fill="#14213D">A</text>
+    <text x="205" y="228" text-anchor="end" font-size="19" font-weight="700" fill="#14213D">tₑ=3</text>
+    <rect x="365" y="78" width="130" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="380" y="118" font-size="30" font-weight="800" fill="#14213D">B</text>
+    <text x="485" y="118" text-anchor="end" font-size="19" font-weight="700" fill="#14213D">tₑ=4</text>
+    <rect x="365" y="298" width="130" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="380" y="338" font-size="30" font-weight="800" fill="#14213D">C</text>
+    <text x="485" y="338" text-anchor="end" font-size="19" font-weight="700" fill="#14213D">tₑ=6.5</text>
+    <rect x="645" y="188" width="130" height="64" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="660" y="228" font-size="30" font-weight="800" fill="#14213D">D</text>
+    <text x="765" y="228" text-anchor="end" font-size="19" font-weight="700" fill="#14213D">tₑ=2</text>
+    <text class="frag" x="430" y="58" text-anchor="middle" font-size="22" font-weight="800" fill="#46526D">A→B→D = 3+4+2 = 9</text>
+    <text class="frag" x="430" y="402" text-anchor="middle" font-size="22" font-weight="800" fill="#D9480F">A→C→D = 3+6.5+2 = 11.5 (dài hơn)</text>
+    <g class="frag">
+      <line x1="215" y1="220" x2="362" y2="330" stroke="#E4572E" stroke-width="5" marker-end="url(#h4c)"/>
+      <line x1="495" y1="330" x2="642" y2="220" stroke="#E4572E" stroke-width="5" marker-end="url(#h4c)"/>
+      <rect x="85" y="188" width="130" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+      <rect x="365" y="298" width="130" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+      <rect x="645" y="188" width="130" height="64" rx="12" fill="none" stroke="#E4572E" stroke-width="5"/>
+    </g>
+  </svg>
+  <div class="frame crit-f frag center" style="font-size:19px;padding:6px 18px;margin-top:4px">Có 2 đường: A→B→D = 9 ngày và A→C→D = 11.5 ngày. Đường <b>dài hơn</b> mới là đường găng → <b>A → C → D</b>.</div>
+  <aside class="notes">Nhắc lại: đường găng là đường dài nhất trong mạng, vì đó là đường quyết định dự án xong sớm nhất khi nào. A-B-D ngắn hơn nên có slack, không phải đường găng.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Hoạt động 4: tính μ và σ của dự án">
+  <h1 class="t">Bước 3: tính μ và σ của dự án</h1>
+  <div class="frame center" style="font-size:24px">
+    <span class="math">μ = Σ tₑ</span> (trên đường găng) &nbsp;&nbsp; <span class="math">σ² = Σ σ²</span> (trên đường găng) &nbsp;&nbsp; <span class="math">σ = √σ²</span>
+  </div>
+  <div class="row mt" style="gap:18px;align-items:stretch">
+    <div class="frame frag center" style="flex:1;font-size:22px"><span class="math">μ = tₑ(A) + tₑ(C) + tₑ(D)<br>= 3 + 6.5 + 2 = <b class="crit">11.5 ngày</b></span></div>
+    <div class="frame frag center" style="flex:1;font-size:22px"><span class="math">σ² = σ²(A) + σ²(C) + σ²(D)<br>= 0.11 + 2.25 + 0.11 = <b>2.47</b></span></div>
+    <div class="frame crit-f frag center" style="flex:1;font-size:22px"><span class="math">σ = √2.47 = <b>1.57 ngày</b></span></div>
+  </div>
+  <div class="note frag mt">Chỉ cộng các việc <b>trên đường găng</b> (A, C, D) — B có slack nên không tính vào μ và σ² của dự án.</div>
+  <aside class="notes">Nhắc công thức: cộng tₑ và cộng σ² trực tiếp trên các việc găng, nhưng σ của dự án là căn bậc hai của tổng phương sai, không phải tổng các σ riêng lẻ.</aside>
+</section>
+
+<section class="slide" data-member="4" data-title="Hoạt động 4: xác suất đúng hạn 13 ngày">
+  <h1 class="t">Bước 4: xác suất hoàn thành trong 13 ngày</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:360px" class="col">
+      <div class="frame center" style="font-size:28px"><span class="math">Z = (D − μ) / σ</span></div>
+      <div class="card frag" style="border-left:8px solid var(--m4);font-size:20px">D = 13, μ = 11.5, σ = 1.57<br><span class="math">Z = (13 − 11.5) / 1.57 = <b class="crit">0.95</b></span></div>
+      <div class="frame green frag center" style="font-size:21px">Tra bảng: Φ(0.95) ≈ 0.83<br><b>P(T ≤ 13) ≈ 83%</b></div>
+    </div>
+    <div class="grow"><div class="viz frag" data-viz="normal2" data-mu="11.5" data-sd="1.57" data-d="13"></div></div>
+  </div>
+  <aside class="notes">Vùng xanh dưới đường cong chuẩn (bên phải) là xác suất dự án xong trong 13 ngày hoặc sớm hơn — khoảng 83%, tức còn khoảng 17% rủi ro trễ hạn.</aside>
+</section>
+
+<!-- ============ TỔNG KẾT ============ -->
+<section class="slide" data-member="0" data-title="Tổng kết">
+  <h1 class="t">Tổng kết: một công thức cho mỗi phần</h1>
+  <div class="cols4">
+    <div class="card" style="border-top:6px solid var(--m1)"><h3 style="color:var(--m1)">1. Ước lượng</h3><div class="frame" style="font-size:19px;padding:8px 10px;box-shadow:4px 4px 0 var(--ink)"><span class="math">ET = (O+4M+P)/6</span></div><p class="small mt">Dùng PERT khi bất định cao. Cẩn thận planning fallacy.</p></div>
+    <div class="card" style="border-top:6px solid var(--m2)"><h3 style="color:var(--m2)">2. Đường găng</h3><div class="frame" style="font-size:19px;padding:8px 10px;box-shadow:4px 4px 0 var(--ink)"><span class="math">S = TL − TE</span></div><p class="small mt">Việc S = 0 là việc găng; đường găng quyết định thời gian dự án.</p></div>
+    <div class="card" style="border-top:6px solid var(--m3)"><h3 style="color:var(--m3)">3. Làm gấp</h3><div class="frame" style="font-size:19px;padding:8px 10px;box-shadow:4px 4px 0 var(--ink)"><span class="math">ΔCost → min</span></div><p class="small mt">Chỉ rút việc găng, chọn rẻ nhất, tính lại sau mỗi bước.</p></div>
+    <div class="card" style="border-top:6px solid var(--m4)"><h3 style="color:var(--m4)">4. Xác suất</h3><div class="frame" style="font-size:19px;padding:8px 10px;box-shadow:4px 4px 0 var(--ink)"><span class="math">Z = (D−μ)/σ</span></div><p class="small mt">Cam kết ≈ 95% thì D = μ + 1.645σ.</p></div>
+  </div>
+  <h2 class="mt2">Dự án web học tiếng Anh, từ đầu đến cuối</h2>
+  <div class="row frag" style="gap:10px;align-items:stretch">
+    <div class="card grow center" style="padding:10px"><b>8 việc</b><br><span class="small">tổng ET 34 tuần</span></div><div style="align-self:center;font-size:28px">→</div>
+    <div class="card grow center" style="padding:10px"><b>Đường găng 22 tuần</b><br><span class="small">A-B-E-G-H</span></div><div style="align-self:center;font-size:28px">→</div>
+    <div class="card grow center" style="padding:10px"><b>Làm gấp còn 20 tuần</b><br><span class="small">+7 triệu</span></div><div style="align-self:center;font-size:28px">→</div>
+    <div class="card grow center" style="padding:10px"><b>Cam kết 26 tuần</b><br><span class="small">≈ 96% đúng hạn</span></div>
+  </div>
+  <aside class="notes">Tóm lại bằng một dòng: ước lượng, tìm đường găng, tối ưu, rồi cam kết có xác suất. Cảm ơn cả lớp, giờ sang Kahoot.</aside>
+</section>
+
+<!-- <section class="slide hero" data-member="0" data-title="Kahoot: ôn tập 10 câu">
+  <div class="hero-l" style="top:130px;width:900px">
+    <h1>Kahoot: 10 câu ôn tập</h1>
+    <p class="lead" style="max-width:900px">Mở <b>kahoot.it</b> trên điện thoại và nhập mã PIN do nhóm chiếu lên màn hình.</p>
+    <div class="proj" style="font-size:34px;letter-spacing:.2em;padding:14px 34px">PIN: _ _ _ _ _ _ _</div>
+    <p class="lead" style="font-size:22px;margin-top:30px">Mỗi câu 20 đến 30 giây. 4 phần của bài đều có câu hỏi. Chọn nhanh và đúng để lên bảng xếp hạng.</p>
+  </div>
+  <aside class="notes">Tạo phòng Kahoot bằng bộ 10 câu trong file PDF kèm theo, chiếu mã PIN thay vào chỗ trống ở slide này.</aside>
+</section>
+
+<section class="slide" data-member="0" data-title="Tài liệu tham khảo và hỏi đáp">
+  <h1 class="t">Tài liệu tham khảo và hỏi đáp</h1>
+  <ul class="dots" style="font-size:19px">
+    <li>Bài giảng “Quản lý thời gian” (môn Quản lý dự án): nội dung nền của cả bài.</li>
+    <li>PMI, <i>A Guide to the Project Management Body of Knowledge (PMBOK® Guide)</i>, phần Project Schedule Management.</li>
+    <li>Malcolm, Roseboom, Clark, Fazar (1959), “Application of a technique for research and development program evaluation”, <i>Operations Research</i> 7(5): nguồn gốc của PERT.</li>
+    <li>Brooks, F. P. (1975), <i>The Mythical Man-Month</i>, Addison-Wesley: luật Brooks.</li>
+    <li>Goldratt, E. M. (1997), <i>Critical Chain</i>, North River Press: critical chain và buffer.</li>
+    <li>Kahneman, D., Tversky, A. (1979), “Intuitive prediction: biases and corrective procedures”, <i>TIMS Studies in Management Science</i> 12: planning fallacy.</li>
+    <li>Parkinson, C. N. (1955), “Parkinson’s Law”, <i>The Economist</i>.</li>
+  </ul>
+  <div class="frame center mt2" style="font-size:34px">Cảm ơn cả lớp! Câu hỏi cho nhóm?</div>
+  <aside class="notes">Mở phần hỏi đáp. Nếu bị hỏi vì sao PERT cho kết quả hơi lạc quan thì quay lại slide Monte Carlo.</aside>
+</section> -->
+
+</div></div>
+<script>/* ===== DATA ===== */
+const MEMBERS=[
+  {name:'Khánh',full:'Nguyễn Minh Khánh',role:'Ước lượng thời gian',color:'#2F6FED'},
+  {name:'Hoàng',full:'Đặng Huy Hoàng',role:'Sơ đồ mạng & đường găng',color:'#0FA37F'},
+  {name:'Khương',full:'Lâm Thụy Khương',role:'Nguồn lực & làm gấp',color:'#F08A1C'},
+  {name:'Duy',full:'Phạm Khánh Duy',role:'PERT, xác suất & rủi ro',color:'#8A5CF5'}
+]; // <-- sửa tên các thành viên tại đây
+
+const TASKS=[
+ {id:'A',name:'Khảo sát yêu cầu',sh:'Khảo sát',out:'Tài liệu yêu cầu (URD)',o:2,m:3,p:4,dep:[],res:2,cr:{t:2,c:6}},
+ {id:'B',name:'Thiết kế giao diện',sh:'Giao diện',out:'Mockup các màn hình',o:3,m:5,p:7,dep:['A'],res:2,cr:{t:4,c:4}},
+ {id:'C',name:'Thiết kế CSDL',sh:'CSDL',out:'Sơ đồ CSDL (user, bài học, từ vựng)',o:2,m:3,p:4,dep:['A'],res:2,cr:{t:2,c:2}},
+ {id:'D',name:'Soạn nội dung bài học',sh:'Nội dung',out:'Bộ bài học + file audio',o:4,m:6,p:8,dep:['A'],res:1,cr:{t:4,c:8}},
+ {id:'E',name:'Lập trình web',sh:'Lập trình',out:'Mã nguồn front-end + back-end',o:5,m:7,p:15,dep:['B','C'],res:3,cr:{t:6,c:10}},
+ {id:'F',name:'Nhập nội dung lên web',sh:'Nhập liệu',out:'Nội dung đã nằm trên hệ thống',o:2,m:3,p:4,dep:['C','D'],res:1,cr:{t:2,c:2}},
+ {id:'G',name:'Kiểm thử',sh:'Kiểm thử',out:'Báo cáo kiểm thử + bản sửa lỗi',o:2,m:3,p:10,dep:['E','F'],res:2,cr:{t:3,c:3}},
+ {id:'H',name:'Triển khai (go-live)',sh:'Triển khai',out:'Website chạy thật',o:1,m:2,p:3,dep:['G'],res:2,cr:{t:1,c:7}}
+];
+const TM={}; TASKS.forEach(t=>TM[t.id]=t);
+const f=(x,d=2)=>Number(x.toFixed(d)).toString();
+const CAP=4;
+(function cpm(){
+  TASKS.forEach(t=>{t.ET=(t.o+4*t.m+t.p)/6; t.var=((t.p-t.o)/6)**2; t.succ=TASKS.filter(u=>u.dep.includes(t.id)).map(u=>u.id);});
+  TASKS.forEach(t=>{t.ES=Math.max(0,...t.dep.map(d=>TM[d].TE)); t.TE=t.ES+t.ET;});
+  window.PROJ=Math.max(...TASKS.map(t=>t.TE));
+  [...TASKS].reverse().forEach(t=>{t.TL=t.succ.length?Math.min(...t.succ.map(s=>TM[s].TL-TM[s].ET)):PROJ; t.S=t.TL-t.TE; t.crit=Math.abs(t.S)<1e-9; t.slope=t.cr?t.cr.c/(t.ET-t.cr.t):0;});
+  window.CRIT=TASKS.filter(t=>t.crit);
+  window.MU=CRIT.reduce((a,t)=>a+t.ET,0); window.VAR=CRIT.reduce((a,t)=>a+t.var,0); window.SIG=Math.sqrt(VAR);
+})();
+const LEVEL={A:0,B:1,C:1,D:1,E:2,F:2,G:3,H:4};
+const PAL=['#4C78C8','#E0884A','#58A98B','#C4688F','#8B7BC8','#BFA23A','#5AA6B8','#8C8F99'];
+const COL={ink:'#14213D',ink2:'#46526D',line:'#D5DDEA',crit:'#E4572E',critSoft:'#FDE6DF',blue:'#2F6FED',tl:'#D9480F',ok:'#0FA37F'};
+let UID=0;
+function erf(x){const s=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+const Phi=z=>0.5*(1+erf(z/Math.SQRT2));
+
+/* ===== beta-PERT helpers ===== */
+function betaGrid(o,m,p,n=200){
+  const a=1+4*(m-o)/(p-o), b=1+4*(p-m)/(p-o); const xs=[],ys=[]; let sum=0;
+  for(let i=0;i<=n;i++){const u=i/n; const y=Math.pow(u,a-1)*Math.pow(1-u,b-1); xs.push(o+u*(p-o)); ys.push(y); sum+=y;}
+  const area=sum*(p-o)/n; return {xs,ys:ys.map(y=>y/area)};
+}
+function curvesSVG(curves,xmin,xmax,{W=640,H=300,marks=false}={}){
+  const L=20,R=20,T=34,B=44, pw=W-L-R, ph=H-T-B;
+  const grids=curves.map(c=>betaGrid(c.o,c.m,c.p)); const ymax=Math.max(...grids.map(g=>Math.max(...g.ys)))*1.12;
+  const X=x=>L+(x-xmin)/(xmax-xmin)*pw, Y=y=>T+ph-y/ymax*ph;
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${T+ph}" y2="${T+ph}" stroke="${COL.ink}" stroke-width="2"/>`;
+  for(let x=Math.ceil(xmin);x<=xmax;x++){s+=`<line x1="${X(x)}" x2="${X(x)}" y1="${T+ph}" y2="${T+ph+6}" stroke="${COL.ink}"/><text x="${X(x)}" y="${T+ph+26}" text-anchor="middle" font-size="16" fill="${COL.ink2}">${x}</text>`;}
+  curves.forEach((c,i)=>{const g=grids[i]; let d=g.xs.map((x,k)=>`${k?'L':'M'}${X(x).toFixed(1)},${Y(g.ys[k]).toFixed(1)}`).join('');
+    s+=`<path d="${d}L${X(c.p)},${T+ph}L${X(c.o)},${T+ph}Z" fill="${c.color}" fill-opacity=".18"/><path d="${d}" fill="none" stroke="${c.color}" stroke-width="3.5"/>`;
+    if(c.label){s+=`<circle cx="${W-R-262}" cy="${16+i*26}" r="7" fill="${c.color}"/><text x="${W-R-248}" y="${22+i*26}" font-size="18" font-weight="700" fill="${c.color}">${c.label}</text>`;}
+  });
+  if(marks){const c=curves[0], te=(c.o+4*c.m+c.p)/6, close=Math.abs(X(te)-X(c.m))<70;
+    [[c.o,'o',COL.ink2,0],[c.m,'m',COL.ink,0],[c.p,'p',COL.ink2,0],[te,'tₑ='+f(te),COL.crit,1]].forEach(([x,l,col,hi])=>{
+      const anc=close?(l==='m'?'end':(hi?'start':'middle')):'middle', dx=close?(l==='m'?-6:(hi?6:0)):0;
+      s+=`<line x1="${X(x)}" x2="${X(x)}" y1="${T-6}" y2="${T+ph}" stroke="${col}" stroke-width="${hi?3:2}" stroke-dasharray="${hi?'':'5 4'}"/><text x="${X(x)+dx}" y="${T-12}" text-anchor="${anc}" font-size="${hi?19:17}" font-weight="700" fill="${col}">${l}${l.length===1?'='+x:''}</text>`;});
+  }
+  return s+'</svg>';
+}
+function sampler(t){const g=betaGrid(t.o,t.m,t.p,200); const cdf=[0]; for(let i=1;i<g.xs.length;i++)cdf.push(cdf[i-1]+(g.ys[i]+g.ys[i-1])/2*(g.xs[i]-g.xs[i-1])); const tot=cdf[cdf.length-1];
+  return ()=>{const r=Math.random()*tot; let lo=0,hi=cdf.length-1; while(hi-lo>1){const mid=(lo+hi)>>1; if(cdf[mid]<r)lo=mid; else hi=mid;} const k=(r-cdf[lo])/((cdf[hi]-cdf[lo])||1); return g.xs[lo]+k*(g.xs[hi]-g.xs[lo]);};}
+
+/* ===== network ===== */
+const POS={A:[80,220],B:[300,75],C:[300,220],D:[300,365],E:[540,148],F:[540,292],G:[740,220],H:[920,220]};
+function networkSVG(mode){
+  const id='m'+(UID++), w=108,h=62; const full=mode==='full';
+  let s=`<svg viewBox="0 0 1000 440"><defs><marker id="${id}a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="${COL.ink2}"/></marker><marker id="${id}c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="${COL.crit}"/></marker></defs>`;
+  s+=`<line x1="10" y1="220" x2="${80-w/2-4}" y2="220" stroke="${COL.ink2}" stroke-width="2.5" marker-end="url(#${id}a)"/><line x1="${920+w/2}" y1="220" x2="992" y2="220" stroke="${COL.ink2}" stroke-width="2.5" marker-end="url(#${id}a)"/>`;
+  TASKS.forEach(t=>t.dep.forEach(d=>{const a=POS[d],b=POS[t.id]; const c=full&&TM[d].crit&&t.crit;
+    s+=`<line x1="${a[0]+w/2}" y1="${a[1]}" x2="${b[0]-w/2-3}" y2="${b[1]}" stroke="${c?COL.crit:COL.ink2}" stroke-width="${c?5:2.5}" marker-end="url(#${id}${c?'c':'a'})"/>`;}));
+  TASKS.forEach(t=>{const [x,y]=POS[t.id]; const c=full&&t.crit;
+    s+=`<rect x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="12" fill="${c?COL.critSoft:'#fff'}" stroke="${c?COL.crit:COL.ink}" stroke-width="${c?4:2.5}"/>`;
+    s+=`<text x="${x-w/2+16}" y="${y-4}" font-size="28" font-weight="800" fill="${COL.ink}">${t.id}</text><text x="${x+w/2-12}" y="${y-5}" text-anchor="end" font-size="19" font-weight="700" fill="${COL.ink}">ET=${f(t.ET)}</text>`;
+    s+=`<text x="${x}" y="${y+h/2-11}" text-anchor="middle" font-size="15" fill="${c?COL.crit:COL.ink2}" font-weight="${full?700:400}">${full?'S='+f(t.S):t.sh}</text>`;
+  });
+  const lab=(t,kind)=>{const [x,y]=POS[t.id]; return kind==='te'?`<text x="${x}" y="${y-h/2-9}" text-anchor="middle" font-size="21" font-weight="800" fill="${COL.blue}">TE=${f(t.TE)}</text>`:`<text x="${x}" y="${y+h/2+24}" text-anchor="middle" font-size="21" font-weight="800" fill="${COL.tl}">TL=${f(t.TL)}</text>`;};
+  if(mode==='te'){for(let L=0;L<=4;L++){s+=`<g class="frag" data-s="${L+1}">${TASKS.filter(t=>LEVEL[t.id]===L).map(t=>lab(t,'te')).join('')}</g>`;}}
+  if(mode==='tl'){s+=TASKS.map(t=>lab(t,'te')).join(''); for(let L=4;L>=0;L--){s+=`<g class="frag" data-s="${5-L}">${TASKS.filter(t=>LEVEL[t.id]===L).map(t=>lab(t,'tl')).join('')}</g>`;}}
+  if(full){s+=TASKS.map(t=>lab(t,'te')+lab(t,'tl')).join('');}
+  return s+'</svg>';
+}
+
+/* ===== gantt ===== */
+function ganttSVG({level=false,mini=false}={}){
+  const x0=mini?10:238, x1=mini?390:984, W=mini?400:1000, rowH=mini?24:44, top=mini?6:34, H=top+8*rowH+(mini?6:42);
+  const u=(x1-x0)/22, X=w=>x0+w*u;
+  const st={}; TASKS.forEach(t=>st[t.id]=t.ES); if(level){st.D=6;st.F=12;}
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  if(!mini){for(let w=0;w<=22;w+=2){s+=`<line x1="${X(w)}" x2="${X(w)}" y1="${top-6}" y2="${top+8*rowH}" stroke="${COL.line}"/><text x="${X(w)}" y="${top-12}" text-anchor="middle" font-size="16" fill="${COL.ink2}">${w}</text>`;}
+    s+=`<text x="${x0-10}" y="${top-12}" text-anchor="end" font-size="15" fill="${COL.ink2}">Tuần</text>`;}
+  TASKS.forEach((t,i)=>{const y=top+i*rowH, by=y+(mini?4:9), bh=mini?16:26, x=X(st[t.id]), wd=t.ET*u;
+    if(!mini)s+=`<text x="${x0-14}" y="${y+rowH/2+6}" text-anchor="end" font-size="17.5" font-weight="${t.crit?700:500}" fill="${t.crit?COL.crit:COL.ink}">${t.id}  ${t.name.replace(' (go-live)','')}</text>`;
+    if(level&&(t.id==='D'||t.id==='F'))s+=`<rect x="${X(t.ES)}" y="${by}" width="${wd}" height="${bh}" rx="5" fill="none" stroke="${COL.ink2}" stroke-width="1.8" stroke-dasharray="5 4"/>`;
+    if(!mini&&!level&&t.S>0)s+=`<g class="frag" data-s="1"><rect x="${x+wd}" y="${by}" width="${t.S*u}" height="${bh}" rx="5" fill="#E8EEF9" stroke="${COL.blue}" stroke-dasharray="5 4" stroke-width="1.6"/><text x="${x+wd+t.S*u/2}" y="${by+bh/2+6}" text-anchor="middle" font-size="14" fill="${COL.blue}" font-weight="700">S=${f(t.S)}</text></g>`;
+    s+=`<rect x="${x}" y="${by}" width="${wd}" height="${bh}" rx="5" fill="${mini?(t.crit?'#FF8A63':'#8FB2FF'):(t.crit?COL.crit:COL.blue)}"/>`;
+    if(!mini)s+=`<text x="${x+wd/2}" y="${by+bh/2+6}" text-anchor="middle" font-size="14.5" font-weight="700" fill="#fff">${t.res} ng</text>`;
+  });
+  if(!mini){const ly=top+8*rowH+26; s+=`<rect x="${x0}" y="${ly-12}" width="22" height="14" rx="3" fill="${COL.crit}"/><text x="${x0+30}" y="${ly}" font-size="15" fill="${COL.ink}">Việc găng</text><rect x="${x0+130}" y="${ly-12}" width="22" height="14" rx="3" fill="${COL.blue}"/><text x="${x0+160}" y="${ly}" font-size="15" fill="${COL.ink}">Việc có slack</text>`;
+    s+=level?`<rect x="${x0+300}" y="${ly-12}" width="22" height="14" rx="3" fill="none" stroke="${COL.ink2}" stroke-dasharray="4 3"/><text x="${x0+330}" y="${ly}" font-size="15" fill="${COL.ink}">Vị trí cũ (trước khi dời)</text>`:`<rect x="${x0+300}" y="${ly-12}" width="22" height="14" rx="3" fill="#E8EEF9" stroke="${COL.blue}" stroke-dasharray="4 3"/><text x="${x0+330}" y="${ly}" font-size="15" fill="${COL.ink}">Khoảng slack (được trễ)</text>`;
+    s+=`<text x="${x1}" y="${ly}" text-anchor="end" font-size="15" fill="${COL.ink2}">“2 ng” = số người làm việc đó</text>`;}
+  return s+'</svg>';
+}
+function loadOf(starts){const L=Array(22).fill(0); TASKS.forEach(t=>{for(let w=Math.round(starts[t.id]);w<Math.round(starts[t.id]+t.ET);w++)L[w]+=t.res;}); return L;}
+function resourceSVG(level){
+  const W=1000,H=400,L=60,R=20,T=22,B=86,pw=W-L-R,ph=H-T-B,u=pw/22,uy=ph/6;
+  const st={}; TASKS.forEach(t=>st[t.id]=t.ES); if(level){st.D=6;st.F=12;}
+  const load=loadOf(st); let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  for(let y=0;y<=6;y++){s+=`<line x1="${L}" x2="${W-R}" y1="${T+ph-y*uy}" y2="${T+ph-y*uy}" stroke="${COL.line}"/><text x="${L-10}" y="${T+ph-y*uy+5}" text-anchor="end" font-size="16" fill="${COL.ink2}">${y}</text>`;}
+  load.forEach((v,w)=>{if(v>CAP)s+=`<rect x="${L+w*u}" y="${T}" width="${u}" height="${ph}" fill="${COL.critSoft}"/>`;});
+  const acc=Array(22).fill(0);
+  TASKS.forEach((t,i)=>{for(let w=Math.round(st[t.id]);w<Math.round(st[t.id]+t.ET);w++){s+=`<rect x="${L+w*u+1.5}" y="${T+ph-(acc[w]+t.res)*uy}" width="${u-3}" height="${t.res*uy}" fill="${PAL[i]}" stroke="#fff" stroke-width="1"/>`; if(t.res>=1&&uy*t.res>20)s+=`<text x="${L+w*u+u/2}" y="${T+ph-(acc[w]+t.res/2)*uy+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${t.id}</text>`; acc[w]+=t.res;}});
+  load.forEach((v,w)=>{s+=`<text x="${L+w*u+u/2}" y="${T+ph-v*uy-6}" text-anchor="middle" font-size="15" font-weight="800" fill="${v>CAP?COL.crit:COL.ink}">${v}</text>`;});
+  s+=`<line x1="${L}" x2="${W-R}" y1="${T+ph-CAP*uy}" y2="${T+ph-CAP*uy}" stroke="${COL.crit}" stroke-width="3" stroke-dasharray="9 6"/><text x="${W-R}" y="${T+ph-CAP*uy-8}" text-anchor="end" font-size="17" font-weight="800" fill="${COL.crit}">Đội chỉ có ${CAP} người</text>`;
+  for(let w=0;w<=22;w+=2)s+=`<text x="${L+w*u}" y="${T+ph+24}" text-anchor="middle" font-size="16" fill="${COL.ink2}">${w}</text>`;
+  s+=`<text x="${L+pw/2}" y="${T+ph+46}" text-anchor="middle" font-size="16" fill="${COL.ink2}">Tuần</text>`;
+  TASKS.forEach((t,i)=>{const x=L+i*118; s+=`<rect x="${x}" y="${H-24}" width="16" height="16" rx="3" fill="${PAL[i]}"/><text x="${x+22}" y="${H-10}" font-size="15" fill="${COL.ink}">${t.id} (${t.res} ng)</text>`;});
+  return s+'</svg>';
+}
+function costBarsSVG(){
+  const W=620,H=380,L=70,R=20,T=14,rowH=42; const rows=[...TASKS].sort((a,b)=>a.slope-b.slope); const max=8.4,pw=W-L-R-120;
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  rows.forEach((t,i)=>{const y=T+i*rowH,bw=t.slope/max*pw; s+=`<text x="${L-12}" y="${y+25}" text-anchor="end" font-size="22" font-weight="800" fill="${t.crit?COL.crit:COL.ink2}">${t.id}</text><rect x="${L}" y="${y+6}" width="${bw}" height="28" rx="5" fill="${t.crit?COL.crit:'#B8C2D6'}"/><text x="${L+bw+10}" y="${y+26}" font-size="18" font-weight="700" fill="${COL.ink}">+${f(t.slope)} tr/tuần${t.crit?'':'  (không găng)'}</text>`;});
+  return s+'</svg>';
+}
+function crash3BarsSVG(){
+  const rows=[{id:'A',cost:6,crit:true},{id:'B',cost:5,crit:true},{id:'C',cost:3,crit:true},{id:'X',cost:1,crit:false}];
+  const W=640,H=198,L=50,T=8,rowH=44,max=6.5,pw=W-L-150;
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  rows.forEach((r,i)=>{const y=T+i*rowH,bw=r.cost/max*pw;
+    s+=`<text x="${L-14}" y="${y+25}" text-anchor="end" font-size="22" font-weight="800" fill="${r.crit?COL.crit:COL.ink2}">${r.id}</text>`;
+    s+=`<rect x="${L}" y="${y+6}" width="${bw}" height="28" rx="5" fill="${r.crit?COL.crit:'#B8C2D6'}"/>`;
+    s+=`<text x="${L+bw+10}" y="${y+26}" font-size="18" font-weight="700" fill="${COL.ink}">${r.cost} tr/tuần${r.crit?'':'  (không găng — loại)'}</text>`;});
+  return s+'</svg>';
+}
+function crash3TimelineSVG(){
+  const W=640,H=200,L=20,pw=600,u=pw/15,rowH=46;
+  const before=[['A',0,4,COL.crit],['B',4,6,COL.crit],['C',10,5,COL.crit]];
+  const after=[['A',0,4,COL.crit],['B',4,5,COL.crit],['C',9,4,COL.crit]];
+  let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  const row=(label,data,y)=>{let o=`<text x="${L}" y="${y-8}" font-size="17" font-weight="800" fill="${COL.ink}">${label}</text>`;
+    data.forEach(([id,st,dur,col])=>{o+=`<rect x="${L+st*u}" y="${y}" width="${dur*u}" height="28" rx="5" fill="${col}"/><text x="${L+st*u+dur*u/2}" y="${y+19}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${id} (${dur})</text>`;});
+    return o;};
+  s+=row('Trước: 15 tuần',before,30);
+  s+=row('Sau: 13 tuần',after,110);
+  s+=`<line x1="${L+13*u}" x2="${L+13*u}" y1="20" y2="146" stroke="${COL.ok}" stroke-width="2.5" stroke-dasharray="5 4"/><text x="${L+13*u}" y="168" text-anchor="middle" font-size="15" font-weight="800" fill="${COL.ok}">13</text>`;
+  s+=`<line x1="${L+15*u}" x2="${L+15*u}" y1="20" y2="66" stroke="${COL.ink2}" stroke-width="2" stroke-dasharray="5 4"/><text x="${L+15*u}" y="82" text-anchor="middle" font-size="15" fill="${COL.ink2}">15</text>`;
+  return s+'</svg>';
+}
+function estBarsSVG(){
+  const W=520,H=400,L=34,T=10,rowH=47,pw=W-L-30,max=15; let s=`<svg viewBox="0 0 ${W} ${H}">`;
+  TASKS.forEach((t,i)=>{const y=T+i*rowH; s+=`<text x="${L-8}" y="${y+27}" text-anchor="end" font-size="19" font-weight="800">${t.id}</text><rect x="${L}" y="${y+3}" width="${t.m/max*pw}" height="17" rx="4" fill="#B8C2D6"/><rect x="${L}" y="${y+22}" width="${t.ET/max*pw}" height="17" rx="4" fill="${COL.blue}"/><text x="${L+t.m/max*pw+6}" y="${y+17}" font-size="14" fill="${COL.ink2}">M=${t.m}</text><text x="${L+t.ET/max*pw+6}" y="${y+37}" font-size="14" font-weight="800" fill="${COL.blue}">ET=${f(t.ET)}</text>`;});
+  return s+'</svg>';
+}
+function depSVG(type){
+  const bars={FS:[[20,170],[170,320]],FF:[[20,230],[110,230]],SS:[[20,230],[20,160]],SF:[[20,170],[170,320]]}[type];
+  const A=bars[0],B=bars[1]; let s=`<svg viewBox="0 0 340 110"><defs><marker id="dm${type}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="${COL.crit}"/></marker></defs>`;
+  s+=`<rect x="${A[0]}" y="14" width="${A[1]-A[0]}" height="26" rx="5" fill="${COL.blue}"/><text x="${(A[0]+A[1])/2}" y="33" text-anchor="middle" fill="#fff" font-weight="800" font-size="16">A</text>`;
+  s+=`<rect x="${B[0]}" y="64" width="${B[1]-B[0]}" height="26" rx="5" fill="#8FB2FF"/><text x="${(B[0]+B[1])/2}" y="83" text-anchor="middle" fill="${COL.ink}" font-weight="800" font-size="16">B</text>`;
+  const [ax,bx]={FS:[A[1],B[0]],FF:[A[1],B[1]],SS:[A[0],B[0]],SF:[A[1],B[0]]}[type];
+  const from=type==='SF'?[bx,64]:[ax,40], to=type==='SF'?[ax,40]:[bx,64];
+  s+=`<path d="M${from[0]},${from[1]} L${to[0]},${to[1]}" stroke="${COL.crit}" stroke-width="3" fill="none" marker-end="url(#dm${type})"/>`;
+  return s+'</svg>';
+}
+function treeSVG(){
+  const W=960,H=410; const nd=(x,y,t1,t2,o={})=>{const w=o.w||124; return `<g ${o.cls?`class="frag" data-s="${o.s}"`:''}><rect x="${x-w/2}" y="${y-24}" width="${w}" height="48" rx="10" fill="${o.fill||'#fff'}" stroke="${o.stroke||COL.ink}" stroke-width="${o.sw||2.5}"/><text x="${x}" y="${y-2}" text-anchor="middle" font-size="19" font-weight="800" fill="${o.col||COL.ink}">${t1}</text><text x="${x}" y="${y+16}" text-anchor="middle" font-size="14" fill="${o.col||COL.ink2}">${t2}</text></g>`;};
+  const ln=(a,b,cost,o={})=>`<g ${o.cls?`class="frag" data-s="${o.s}"`:''}><line x1="${a[0]}" y1="${a[1]+24}" x2="${b[0]}" y2="${b[1]-24}" stroke="${COL.ink2}" stroke-width="2"/><text x="${(a[0]+b[0])/2+(b[0]<a[0]?-8:8)}" y="${(a[1]+b[1])/2+4}" text-anchor="${b[0]<a[0]?'end':'start'}" font-size="15" font-weight="800" fill="${COL.tl}">${cost}</text></g>`;
+  const root=[450,40], L1={B:[150,160],C:[330,160],F:[580,160],G:[790,160]}, F2={FB:[460,290],FC:[580,290],FG:[700,290]}, B2={BC:[30,290],BF:[150,290],BG:[270,290]};
+  let s=`<svg viewBox="-30 0 ${W} ${H}">`+nd(root[0],root[1],'{ }  T=13 > 9','CT = {B, C, F, G}',{w:150});
+  [['B',8],['C',18],['F',6],['G',30]].forEach(([k,c])=>{s+=ln(root,L1[k],'+'+c)+nd(L1[k][0],L1[k][1],k==='F'?'{F}  T=11':(k==='B'?'{B}  T=11':k),'+'+c+' (đơn vị)',{fill:k==='F'?COL.critSoft:'#fff',stroke:k==='F'?COL.crit:COL.ink});});
+  [['FB',14],['FC',24],['FG',36]].forEach(([k,c])=>{const ok=k==='FB'; s+=ln(L1.F,F2[k],'+'+c,{cls:1,s:1})+nd(F2[k][0],F2[k][1],ok?'{F,B} T=9':k,'tổng +'+c,{w:112,cls:1,s:1,fill:ok?'#DDF5EC':'#fff',stroke:ok?COL.ok:COL.ink,sw:ok?4:2.5});});
+  [['BC',26],['BF',22],['BG',38]].forEach(([k,c])=>{const dup=k==='BF'; s+=ln(L1.B,B2[k],'+'+c,{cls:1,s:2})+nd(B2[k][0],B2[k][1],k,dup?'trùng: bỏ':'tổng +'+c,{w:112,cls:1,s:2,col:dup?'#9AA3B5':COL.ink,stroke:dup?'#9AA3B5':COL.ink});});
+  s+=`<g class="frag" data-s="3"><rect x="400" y="340" width="440" height="58" rx="12" fill="#DDF5EC" stroke="${COL.ok}" stroke-width="3.5"/><text x="620" y="364" text-anchor="middle" font-size="19" font-weight="800" fill="#0B6B53">Làm gấp {F, B}: dự án còn 9 tháng,</text><text x="620" y="387" text-anchor="middle" font-size="19" font-weight="800" fill="#0B6B53">chi phí tăng chỉ +14 (thấp nhất)</text></g>`;
+  return s+'</svg>';
+}
+function channelsSVG(){
+  const ns=[2,4,6,8,10],W=480,H=300,L=40,B=44,T=24,max=45,bw=62,gap=26; let s=`<svg viewBox="0 0 ${W} ${H}"><line x1="${L}" x2="${W-10}" y1="${H-B}" y2="${H-B}" stroke="${COL.ink}" stroke-width="2"/>`;
+  ns.forEach((n,i)=>{const v=n*(n-1)/2,h=v/max*(H-B-T),x=L+i*(bw+gap); s+=`<rect x="${x}" y="${H-B-h}" width="${bw}" height="${h}" rx="5" fill="${i===1?COL.blue:(i===3?COL.crit:'#B8C2D6')}"/><text x="${x+bw/2}" y="${H-B-h-8}" text-anchor="middle" font-size="19" font-weight="800">${v}</text><text x="${x+bw/2}" y="${H-B+26}" text-anchor="middle" font-size="17" fill="${COL.ink2}">${n} người</text>`;});
+  return s+'</svg>';
+}
+function normalSVG(mu,sd,D,{W=760,H=300}={}){
+  const L=20,R=20,T=30,B=46,pw=W-L-R,ph=H-T-B, xmin=mu-4*sd, xmax=mu+4*sd; const X=x=>L+(x-xmin)/(xmax-xmin)*pw; const pdf=x=>Math.exp(-0.5*((x-mu)/sd)**2); const Y=y=>T+ph-y*ph*0.95;
+  let line='',area=''; for(let i=0;i<=160;i++){const x=xmin+(xmax-xmin)*i/160; line+=`${i?'L':'M'}${X(x).toFixed(1)},${Y(pdf(x)).toFixed(1)}`; if(x<=D)area+=`${area?'L':'M'}${X(x).toFixed(1)},${Y(pdf(x)).toFixed(1)}`;}
+  let s=`<svg viewBox="0 0 ${W} ${H}">`; const Dc=Math.max(xmin,Math.min(xmax,D));
+  if(area)s+=`<path d="${area}L${X(Dc)},${T+ph}L${X(xmin)},${T+ph}Z" fill="${COL.ok}" fill-opacity=".30"/>`;
+  s+=`<path d="${line}" fill="none" stroke="${COL.ink}" stroke-width="3.5"/><line x1="${L}" x2="${W-R}" y1="${T+ph}" y2="${T+ph}" stroke="${COL.ink}" stroke-width="2"/>`;
+  for(let x=Math.ceil(xmin);x<=xmax;x++)s+=`<line x1="${X(x)}" x2="${X(x)}" y1="${T+ph}" y2="${T+ph+6}" stroke="${COL.ink}"/><text x="${X(x)}" y="${T+ph+26}" text-anchor="middle" font-size="15" fill="${COL.ink2}">${x}</text>`;
+  s+=`<line x1="${X(mu)}" x2="${X(mu)}" y1="${T-4}" y2="${T+ph}" stroke="${COL.blue}" stroke-width="2.5" stroke-dasharray="6 5"/><text x="${X(mu)}" y="${T-10}" text-anchor="middle" font-size="17" font-weight="800" fill="${COL.blue}">μ = ${f(mu)}</text>`;
+  s+=`<line x1="${X(Dc)}" x2="${X(Dc)}" y1="${T}" y2="${T+ph}" stroke="${COL.crit}" stroke-width="4"/><text x="${X(Dc)+(Dc>mu?8:-8)}" y="${T+16}" text-anchor="${Dc>mu?'start':'end'}" font-size="19" font-weight="800" fill="${COL.crit}">D = ${f(D,1)}</text>`;
+  return s+'</svg>';
+}
+function heroSVG(){return ganttSVG({mini:true});}
+
+/* ===== table builders ===== */
+const tHead=(...c)=>`<tr>${c.map((x,i)=>`<th class="${i>0&&x.n?'n':''}">${x.t||x}</th>`).join('')}</tr>`;
+function projTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th>Kết quả chuyển giao</th><th class="n">Phụ thuộc</th><th class="n">Nguồn lực</th></tr>';
+  TASKS.forEach(t=>s+=`<tr><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td>${t.out}</td><td class="n">${t.dep.join(', ')||'—'}</td><td class="n">${t.res} người</td></tr>`); return s+'</table></div>';}
+function pertTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th class="n">O</th><th class="n">M</th><th class="n">P</th><th class="n">ET</th><th class="n">σ²</th></tr>'; let sum=0;
+  TASKS.forEach(t=>{sum+=t.ET; s+=`<tr><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${t.o}</td><td class="n">${t.m}</td><td class="n">${t.p}</td><td class="n"><b>${f(t.ET)}</b></td><td class="n">${f(t.var)}</td></tr>`;});
+  return s+`<tr><td colspan="5" style="text-align:right"><b>Tổng ET (nếu làm nối tiếp)</b></td><td class="n"><b>${f(sum)}</b></td><td></td></tr></table></div>`;}
+function cpTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th class="n">ET</th><th class="n">Bắt đầu sớm</th><th class="n">TE</th><th class="n">TL</th><th class="n">S = TL − TE</th><th class="n">Găng?</th></tr>';
+  TASKS.forEach(t=>s+=`<tr class="${t.crit?'c':''}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${f(t.ET)}</td><td class="n">${f(t.ES)}</td><td class="n">${f(t.TE)}</td><td class="n">${f(t.TL)}</td><td class="n">${f(t.S)}</td><td class="n">${t.crit?'●':''}</td></tr>`); return s+'</table></div>';}
+function crashTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th class="n">Bình thường</th><th class="n">Làm gấp</th><th class="n">Chi phí thêm</th></tr>';
+  TASKS.forEach(t=>s+=`<tr class="${t.crit?'c':''}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${f(t.ET)} tuần</td><td class="n">${t.cr.t} tuần</td><td class="n">+${t.cr.c} tr</td></tr>`); return s+'</table></div>';}
+function critSumTable(){let s='<div class="tbl-wrap"><table><tr><th class="n">CV găng</th><th>Công việc</th><th class="n">o, m, p</th><th class="n">tₑ</th><th class="n">σ²</th></tr>';
+  CRIT.forEach((t,i)=>s+=`<tr class="frag" data-s="${i+1}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${t.o}, ${t.m}, ${t.p}</td><td class="n">${f(t.ET)}</td><td class="n">${f(t.var)}</td></tr>`);
+  return s+`<tr class="frag" data-s="6" style="background:var(--hl-soft)"><td colspan="3" style="text-align:right"><b>Cộng lại</b></td><td class="n"><b>μ = ${f(MU)}</b></td><td class="n"><b>${f(VAR)}</b></td></tr></table></div>`;}
+function deadlineTable(){const rows=[[22,'Cam kết đúng mức trung bình','Rủi ro rất cao: gần như tung đồng xu'],[23,'Cải thiện nhưng vẫn mong manh','Khoảng 1/3 khả năng bị trễ'],[24,'Khá ổn','Vẫn có ~1 trong 5 khả năng trễ'],[25,'Tương đối an toàn','Mức hợp lý cho hợp đồng thông thường'],[26,'An toàn (≈ 95%)','Phù hợp khi phạt trễ hạn nặng'],[27,'Rất an toàn','Có thể kém cạnh tranh về thời gian']];
+  let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">Deadline D</th><th class="n">Z = (D−μ)/σ</th><th class="n">P(T ≤ D)</th><th>Ý nghĩa quản lý</th></tr>';
+  rows.forEach(([D,a,b],i)=>{const z=(D-MU)/SIG,p=Phi(z); s+=`<tr class="frag" data-s="${i+1}"><td class="n"><b>${D} tuần</b></td><td class="n">${f(z)}</td><td class="n"><b>${Math.round(p*100)}%</b></td><td><b>${a}</b><br><span class="tiny">${b}</span></td></tr>`;}); return s+'</table></div>';}
+
+/* ===== interactive widgets ===== */
+function mountPertCalc(host){
+  host.innerHTML=`<div class="interactive"><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span><b>O</b> (lạc quan) <input type="number" id="pc-o" value="2" min="0" step="0.5"></span><span><b>M</b> (hay gặp nhất) <input type="number" id="pc-m" value="4" min="0" step="0.5"></span><span><b>P</b> (bi quan) <input type="number" id="pc-p" value="9" min="0" step="0.5"></span></div><div id="pc-out" style="font-size:22px"></div><div id="pc-svg" style="margin-top:6px"></div></div>`;
+  const upd=()=>{let o=+host.querySelector('#pc-o').value,m=+host.querySelector('#pc-m').value,p=+host.querySelector('#pc-p').value; const out=host.querySelector('#pc-out');
+    if(!(o<=m&&m<=p&&o<p)){out.innerHTML='<span class="crit">Cần O ≤ M ≤ P (và O &lt; P).</span>';return;}
+    const te=(o+4*m+p)/6,v=((p-o)/6)**2; out.innerHTML=`<span class="math">tₑ = (${o} + 4×${m} + ${p}) / 6 = <b class="crit">${f(te)}</b></span> &nbsp;|&nbsp; <span class="math">σ² = ((${p} − ${o})/6)² = <b>${f(v)}</b></span> &nbsp;|&nbsp; σ = <b>${f(Math.sqrt(v))}</b>`;
+    host.querySelector('#pc-svg').innerHTML=curvesSVG([{o,m,p,color:COL.blue}],Math.floor(o)-0,Math.ceil(p),{W:1000,H:210,marks:true});};
+  host.querySelectorAll('input').forEach(i=>i.addEventListener('input',upd)); upd();
+}
+function mountNormal(host){
+  host.innerHTML=`<div class="interactive"><div id="nm-svg"></div><div style="display:flex;align-items:center;gap:18px;margin-top:2px"><span style="white-space:nowrap"><b>Kéo deadline D:</b></span><input type="range" id="nm-r" min="18" max="30" step="0.5" value="24"><span id="nm-out" style="white-space:nowrap;font-size:22px"></span></div></div>`;
+  const r=host.querySelector('#nm-r'); const upd=()=>{const D=+r.value,z=(D-MU)/SIG,p=Phi(z); host.querySelector('#nm-svg').innerHTML=normalSVG(MU,SIG,D); host.querySelector('#nm-out').innerHTML=`Z = <b>${f(z)}</b> → P(T ≤ D) ≈ <b class="${p>=.9?'ok':(p<.7?'crit':'')}">${(p*100).toFixed(1)}%</b>`;};
+  r.addEventListener('input',upd); r.addEventListener('change',()=>r.blur()); upd();
+}
+function mountMC(host){
+  host.innerHTML=`<div class="interactive"><div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><b>Kịch bản:</b><button class="btn alt" id="mc-s0">Dự án gốc (22 tuần)</button><button class="btn alt" id="mc-s1">Sau khi làm gấp B và G (20 tuần)</button></div><div id="mc-svg" style="min-height:200px;max-width:900px;margin:0 auto"></div><div style="display:flex;gap:14px;align-items:center;margin-top:4px"><button class="btn" id="mc-run">Chạy lại 10.000 lần</button><span id="mc-out" class="small" style="font-size:18px"></span></div></div>`;
+  let sc=0;
+  const mk=k=>TASKS.map(t=>{const sh=(k===1&&(t.id==='B'||t.id==='G'))?1:0; return {id:t.id,dep:t.dep,o:t.o-sh,m:t.m-sh,p:t.p-sh};});
+  const run=()=>{const L=mk(sc), sm={}; L.forEach(t=>sm[t.id]=sampler(t)); const mu=sc?MU-2:MU, D=mu+2, N=10000, res=[];
+    for(let i=0;i<N;i++){const te={}; let mx=0; for(const t of L){const es=Math.max(0,...t.dep.map(d=>te[d])); te[t.id]=es+sm[t.id](); if(te[t.id]>mx)mx=te[t.id];} res.push(mx);}
+    const mean=res.reduce((a,b)=>a+b,0)/N, pmc=res.filter(x=>x<=D).length/N, ppert=Phi((D-mu)/SIG);
+    const bins=Array(24).fill(0), b0=mu-8, bw=0.5; res.forEach(x=>{const k=Math.floor((x-b0)/bw); if(k>=0&&k<bins.length)bins[k]++;});
+    const W=1000,H=250,Lm=30,Bm=40,T=34,pw=W-2*Lm,ph=H-Bm-T,mxb=Math.max(...bins); const X=x=>Lm+(x-b0)/(bins.length*bw)*pw;
+    let s=`<svg viewBox="0 0 ${W} ${H}">`; bins.forEach((c,i)=>{const x=b0+i*bw; s+=`<rect x="${X(x)+1}" y="${T+ph-c/mxb*ph}" width="${pw/bins.length-2}" height="${c/mxb*ph}" fill="${x+bw<=D?'#79C9B1':'#B8C2D6'}"/>`;});
+    s+=`<line x1="${Lm}" x2="${W-Lm}" y1="${T+ph}" y2="${T+ph}" stroke="${COL.ink}" stroke-width="2"/>`; for(let x=Math.ceil(b0);x<=b0+12;x+=2)s+=`<text x="${X(x)}" y="${T+ph+24}" text-anchor="middle" font-size="16" fill="${COL.ink2}">${x}</text>`;
+    s+=`<line x1="${X(mu)}" x2="${X(mu)}" y1="${T}" y2="${T+ph}" stroke="${COL.blue}" stroke-width="3" stroke-dasharray="6 5"/><text x="${X(mu)-6}" y="${T-12}" text-anchor="end" font-size="17" font-weight="800" fill="${COL.blue}">PERT: μ = ${mu}</text><text x="${X(mu)+6}" y="${T-12}" font-size="17" font-weight="800" fill="${COL.ink2}">mô phỏng TB = ${mean.toFixed(1)}</text><line x1="${X(D)}" x2="${X(D)}" y1="${T-4}" y2="${T+ph}" stroke="${COL.crit}" stroke-width="3"/><text x="${X(D)+8}" y="${T+16}" font-size="16" font-weight="800" fill="${COL.crit}">D = ${D}</text>`;
+    host.querySelector('#mc-svg').innerHTML=s+'</svg>';
+    const diff=(pmc-ppert)*100;
+    host.querySelector('#mc-out').innerHTML=`P(T ≤ ${D}): <b class="ok">${(pmc*100).toFixed(1)}%</b> (mô phỏng) và <b class="blue">${(ppert*100).toFixed(1)}%</b> (PERT), chênh ${Math.abs(diff).toFixed(1)} điểm %.`;
+    host.querySelector('#mc-s0').style.background=sc?'#fff':'#FFF4C2'; host.querySelector('#mc-s1').style.background=sc?'#FFF4C2':'#fff';};
+  host.querySelector('#mc-run').addEventListener('click',run);
+  host.querySelector('#mc-s0').addEventListener('click',()=>{sc=0;run();}); host.querySelector('#mc-s1').addEventListener('click',()=>{sc=1;run();}); run();
+}
+
+/* ===== mount ===== */
+const VIZ={
+  hero:()=>heroSVG(), 'proj-table':projTable, 'pert-table':pertTable, 'est-bars':estBarsSVG, 'cp-table':cpTable, 'crash-table':crashTable, 'cost-bars':costBarsSVG,
+  'crit-sum':critSumTable,'deadline-table':deadlineTable,tree:treeSVG,channels:channelsSVG,
+  network:h=>networkSVG(h.dataset.mode||'et'), gantt:h=>ganttSVG({level:h.dataset.mode==='level'}), resource:h=>resourceSVG(h.dataset.mode==='level'),
+  dep:h=>depSVG(h.dataset.type),
+  beta:h=>{const o=+h.dataset.o,m=+h.dataset.m,p=+h.dataset.p; return curvesSVG([{o,m,p,color:COL.blue}],o-0,p,{W:+h.dataset.w||620,H:+h.dataset.h||290,marks:true});},
+  beta2:h=>curvesSVG([{o:2,m:5,p:8,color:COL.crit,label:'Rủi ro cao  (σ² = 1.00)'},{o:4,m:5,p:6,color:COL.blue,label:'Ít rủi ro  (σ² = 0.11)'}],1,9,{W:700,H:300}),
+  'crash3-bars':crash3BarsSVG,'crash3-timeline':crash3TimelineSVG,
+  'normal2':h=>normalSVG(+h.dataset.mu,+h.dataset.sd,+h.dataset.d,{W:+h.dataset.w||720,H:+h.dataset.h||260})
+};
+const MOUNT={pertcalc:mountPertCalc,normal:mountNormal,mc:mountMC};
+function mountViz(){document.querySelectorAll('[data-viz]').forEach(h=>{const k=h.dataset.viz; if(MOUNT[k])MOUNT[k](h); else if(VIZ[k])h.innerHTML=VIZ[k](h); else console.warn('missing viz',k);});}
+
+/* ===== deck engine ===== */
+(function(){
+  const stage=document.getElementById('stage');
+  const slides=[...document.querySelectorAll('.slide')];
+  mountViz();
+  // member placeholders
+  document.querySelectorAll('[data-mname]').forEach(e=>e.textContent=MEMBERS[e.dataset.mname-1].name);
+  document.querySelectorAll('[data-mfull]').forEach(e=>e.textContent=MEMBERS[e.dataset.mfull-1].full);
+  document.querySelectorAll('[data-mrole]').forEach(e=>e.textContent=MEMBERS[e.dataset.mrole-1].role);
+  slides.forEach((s,i)=>{
+    const m=+s.dataset.member||0;
+    if(m&&!s.classList.contains('divider')){const c=document.createElement('div');c.className='chip-member';c.innerHTML=`<i></i>${MEMBERS[m-1].name} · ${MEMBERS[m-1].role}`;s.appendChild(c);}
+    // fragment steps
+    let last=0; const steps=new Set();
+    s.querySelectorAll('.frag').forEach(el=>{let k; if(el.dataset.s){k=+el.dataset.s; last=Math.max(last,k);} else {k=++last; el.dataset.s=k;} steps.add(k);});
+    s._steps=[...steps].sort((a,b)=>a-b); s._k=0; s._title=(s.dataset.title||(s.querySelector('h1')?s.querySelector('h1').textContent:'Slide '+(i+1))).trim();
+    const n=s.querySelector('.notes'); s._note=n?n.textContent.trim():'';
+  });
+  // HUD
+  const hud=document.createElement('div'); hud.id='hud';
+  hud.innerHTML=`<div class="legend">${MEMBERS.map((m,i)=>`<span data-m="${i+1}" title="Đến phần của ${m.full}"><i style="background:${m.color}"></i>${m.name}</span>`).join('')}</div><div class="ctl"><button id="b-prev" title="Lùi (←)">◀</button><span class="count" id="count"></span><button id="b-next" title="Tiến (→)">▶</button><button id="b-ov" title="Mục lục (O)">☰</button><button id="b-note" title="Ghi chú lời dẫn (N)">✎</button><button id="b-fs" title="Toàn màn hình (F)">⛶</button><button id="b-help" title="Phím tắt (?)">?</button></div>`;
+  const bar=document.createElement('div'); bar.id='bar';
+  const ov=document.createElement('div'); ov.id='overview';
+  ov.innerHTML=`<h2>Mục lục – bấm để nhảy tới slide</h2><div class="grid">${slides.map((s,i)=>`<button data-i="${i}" style="--c:${(MEMBERS[(+s.dataset.member||0)-1]||{color:'#888'}).color}"><b>${i+1}</b>${s._title}</button>`).join('')}</div>`;
+  const notes=document.createElement('div'); notes.id='notes';
+  const help=document.createElement('div'); help.id='help'; help.innerHTML='<kbd>→</kbd> <kbd>Space</kbd> <kbd>Enter</kbd> / bấm chuột: bước kế tiếp<br><kbd>←</kbd> <kbd>Backspace</kbd>: lùi một bước<br><kbd>Home</kbd> <kbd>End</kbd>: đầu / cuối &nbsp; <kbd>O</kbd>: mục lục<br><kbd>F</kbd>: toàn màn hình &nbsp; <kbd>N</kbd>: ghi chú &nbsp; <kbd>?</kbd>: bảng này';
+  stage.append(hud,bar,ov,notes,help);
+
+  let cur=0;
+  function applyFrags(s){const lim=s._k?s._steps[s._k-1]:0; s.querySelectorAll('.frag').forEach(el=>el.classList.toggle('on',+el.dataset.s<=lim));}
+  function render(){
+    slides.forEach((s,i)=>{s.classList.toggle('active',i===cur); s.classList.toggle('past',i<cur);});
+    const s=slides[cur]; applyFrags(s);
+    document.getElementById('count').textContent=`${cur+1} / ${slides.length}`;
+    bar.style.width=((cur+1)/slides.length*100)+'%';
+    const m=+s.dataset.member||0; bar.style.background=m?MEMBERS[m-1].color:'#14213D';
+    hud.querySelectorAll('.legend span').forEach(e=>e.classList.toggle('cur',+e.dataset.m===m));
+    ov.querySelectorAll('button').forEach(b=>b.classList.toggle('cur',+b.dataset.i===cur));
+    notes.textContent=s._note?('🎤 '+s._note):'(Slide này chưa có ghi chú)';
+    hud.style.background=(s.classList.contains('hero')||s.classList.contains('divider'))?'rgba(20,33,61,.92)':'';
+    hud.style.color=(s.classList.contains('hero')||s.classList.contains('divider'))?'#fff':'';
+    history.replaceState(null,'','#'+(cur+1));
+  }
+  function goto(i,k){cur=Math.max(0,Math.min(slides.length-1,i)); const s=slides[cur]; s._k=(k==='end')?s._steps.length:(k||0); render();}
+  function next(){const s=slides[cur]; if(s._k<s._steps.length){s._k++;applyFrags(s);} else if(cur<slides.length-1)goto(cur+1,0);}
+  function prev(){const s=slides[cur]; if(s._k>0){s._k--;applyFrags(s);} else if(cur>0)goto(cur-1,'end');}
+  window.deck={next,prev,goto};
+
+  function fit(){const sc=Math.min(innerWidth/1280,innerHeight/720); stage.style.transform=`translate(-50%,-50%) scale(${sc})`;}
+  addEventListener('resize',fit); fit();
+
+  addEventListener('keydown',e=>{
+    const t=e.target; if(t&&(t.tagName==='INPUT'&&t.type!=='range'||t.tagName==='TEXTAREA'))return;
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    const k=e.key;
+    if(['ArrowRight','PageDown',' ','Enter','ArrowDown'].includes(k)){e.preventDefault();ov.classList.contains('show')||next();}
+    else if(['ArrowLeft','PageUp','Backspace','ArrowUp'].includes(k)){e.preventDefault();ov.classList.contains('show')||prev();}
+    else if(k==='Home'){e.preventDefault();goto(0,0);} else if(k==='End'){e.preventDefault();goto(slides.length-1,'end');}
+    else if(k==='f'||k==='F'){toggleFs();} else if(k==='o'||k==='O'){ov.classList.toggle('show');}
+    else if(k==='n'||k==='N'){notes.classList.toggle('show');} else if(k==='?'){help.classList.toggle('show');}
+    else if(k==='Escape'){ov.classList.remove('show');help.classList.remove('show');}
+  });
+  function toggleFs(){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); else document.exitFullscreen();}
+  stage.addEventListener('click',e=>{if(e.target.closest('input,button,select,textarea,a,.interactive,#hud,#overview,#help,#notes'))return; next();});
+  hud.addEventListener('click',e=>{const lg=e.target.closest('.legend span'); if(lg){const idx=slides.findIndex(s=>s.classList.contains('divider')&&+s.dataset.member===+lg.dataset.m); if(idx>=0){goto(idx,0);} return;}
+   const b=e.target.closest('button'); if(!b)return; ({ 'b-prev':prev,'b-next':next,'b-ov':()=>ov.classList.toggle('show'),'b-note':()=>notes.classList.toggle('show'),'b-fs':toggleFs,'b-help':()=>help.classList.toggle('show')})[b.id]();});
+  ov.addEventListener('click',e=>{const b=e.target.closest('button[data-i]'); if(b){ov.classList.remove('show');goto(+b.dataset.i,0);} else if(e.target===ov)ov.classList.remove('show');});
+  let tx=0,ty=0; stage.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+  stage.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty; if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){dx<0?next():prev();}},{passive:true});
+  addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1)); if(!isNaN(n)&&n-1!==cur)goto(n-1,0);});
+  const h=parseInt(location.hash.slice(1)); goto(isNaN(h)?0:h-1,0);
+})();
+</script></body></html>

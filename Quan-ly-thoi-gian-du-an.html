@@ -71,6 +71,7 @@ td.n,th.n{text-align:center}
 tr.c td{background:var(--crit-soft);font-weight:600}
 tr.c td:first-child{box-shadow:inset 5px 0 0 var(--crit)}
 table.tight td,table.tight th{padding:6px 11px;font-size:18.5px}
+table.crash-t td,table.crash-t th{padding:6px 12px;font-size:19px;line-height:1.2}
 table.ex td{font-size:20px}
 .tbl-wrap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
 
@@ -177,7 +178,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
     <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m3)"><div style="flex:none;width:290px"><b data-mfull="3"></b><br><span class="small" data-mrole="3"></span></div><div class="grow"><b>Thiếu người hoặc cần xong sớm hơn thì sao?</b><br><span class="small">Resource leveling, làm gấp (crashing), luật Brooks</span></div><span class="tag gray">~8 phút</span></div>
     <div class="card frag" style="display:flex;gap:18px;align-items:center;border-left:8px solid var(--m4)"><div style="flex:none;width:290px"><b data-mfull="4"></b><br><span class="small" data-mrole="4"></span></div><div class="grow"><b>Cam kết hạn nào thì an toàn?</b><br><span class="small">Phương sai, Z-score, xác suất đúng hạn, mô phỏng Monte Carlo</span></div><span class="tag gray">~8 phút</span></div>
   </div>
-  <p class="frag small mt2">Cuối buổi: <b>Kahoot 10 câu</b> ôn lại toàn bộ, và 4 bài tập nhỏ xen giữa các phần.</p>
+  <p class="frag small mt2">Cuối buổi: <b>Kahoot 10 câu</b> ôn lại toàn bộ.</p>
   <aside class="notes">Giới thiệu nhanh bốn phần và người phụ trách. Nhấn mạnh: ước lượng, rồi lập lịch, rồi tối ưu lịch, rồi đo rủi ro.</aside>
 </section>
 
@@ -244,7 +245,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
       </ul>
       <div class="card frag" style="border-left:8px solid var(--accent)"><b>Việc E (lập trình web)</b><br>O = 5, M = 7, P = 15<br><span class="math">ET = (5 + 4×7 + 15) / 6 = 48 / 6 = <b class="crit">8 tuần</b></span></div>
     </div>
-    <div class="grow"><div class="viz frag" data-viz="beta" data-o="5" data-m="7" data-p="15" data-w="640" data-h="320"></div><p class="small center frag">ET = 8 lệch phải so với M = 7, vì rủi ro trễ nặng hơn khả năng xong sớm.</p></div>
+    <div class="grow"><div class="viz frag" data-viz="beta" data-o="5" data-m="7" data-p="15" data-w="640" data-h="320"></div><p class="small center frag" style="font-size:17px">ET = 8 lệch phải so với M = 7, vì rủi ro trễ nặng hơn khả năng xong sớm.</p></div>
   </div>
   <aside class="notes">Nhấn mạnh trực giác: đường cong lệch phải thì trung bình dịch sang phải. Lập trình web có đuôi trễ dài nên PERT báo 8 tuần chứ không phải 7.</aside>
 </section>
@@ -287,7 +288,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <h1 class="t">Hoạt động 1: cùng ước lượng bằng PERT</h1>
   <p class="sub">Việc cần ước lượng: <b>“làm file thuyết trình cho môn này”</b> (tính bằng ngày). Nhập O, M, P và xem thay đổi.</p>
   <div class="viz" data-viz="pertcalc"></div>
-  <p class="small mt">Thử đổi P thật lớn để thấy ET bị kéo lệch về bên phải như thế nào.</p>
+  <!-- <p class="small mt">Thử đổi P thật lớn để thấy ET bị kéo lệch về bên phải như thế nào.</p> -->
   <aside class="notes">Mời 2-3 bạn đưa số. Nhập vào máy tính để lớp thấy ET và σ² thay đổi. Sau đó chuyển micro cho thành viên 2.</aside>
 </section>
 <!-- ============ PHẦN 2 ============ -->
@@ -508,13 +509,11 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
 </section>
 
 <section class="slide" data-member="3" data-title="Dữ liệu làm gấp của dự án web">
-  <h1 class="t">Dữ liệu làm gấp của dự án web</h1>
-  <div class="row" style="gap:22px;align-items:flex-start">
-    <div style="width:640px"><div class="viz" data-viz="crash-table"></div></div>
-    <div class="grow"><p class="small" style="margin-bottom:0"><b>Chi phí rút 1 tuần</b> (đỏ = việc găng)</p><div class="viz" data-viz="cost-bars"></div></div>
-  </div>
-  <div class="frame frag center mt" style="font-size:21px;padding:10px 20px">Trong các việc găng, rẻ nhất lần lượt là <b>G (+3)</b>, <b>B (+4)</b>, <b>E (+5)</b>. C và F rẻ hơn nhưng <b>không găng</b>: không dùng được. <span style="font-size:16px">(tiền: triệu đồng, chi phí tăng đều theo số tuần rút)</span></div>
-  <aside class="notes">Đây là cái bẫy: C và F có giá rẻ nhất nhưng không nằm trên đường găng. Chỉ chọn trong các cột màu đỏ.</aside>
+  <h1 class="t" style="margin-bottom:6px">Dữ liệu làm gấp: tính chi phí rút 1 tuần</h1>
+  <div class="frame center" style="font-size:22px;padding:8px 18px;margin-bottom:12px"><span class="math">Chi phí rút 1 tuần = (Crash Cost − Normal Cost) / (Normal Time − Crash Time)</span><br><span style="font-size:16px">NT, CT: tuần · NC, CC: triệu đồng · CC − NC là tiền tăng thêm, NT − CT là số tuần rút được</span></div>
+  <div class="viz" data-viz="crash-table"></div>
+  <div class="frame frag center" data-s="9" style="font-size:20px;padding:8px 18px;margin-top:12px">Xếp các việc <b class="crit">găng</b> từ rẻ đến đắt: <b>G (3)</b> &lt; <b>B (4)</b> &lt; <b>E (5)</b> &lt; A (6) &lt; H (7). C, F rẻ nhất (2) nhưng <b>không găng</b> nên loại.</div>
+  <aside class="notes">Bảng theo đúng mẫu Normal/Crash Time và Normal/Crash Cost. Mỗi lần bấm, thế số vào công thức cho một việc: lấy chi phí gấp trừ chi phí thường, chia cho số tuần rút được. Cuối cùng chỉ xếp hạng trong các dòng đỏ (việc găng).</aside>
 </section>
 
 <section class="slide" data-member="3" data-title="Làm gấp từng bước: 22 xuống 20 tuần">
@@ -532,8 +531,67 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Làm theo nguyên tắc: mỗi bước rút việc găng rẻ nhất, rồi tính lại đường găng. Cuối cùng so sánh với các phương án khác để chắc chắn 7 triệu là thấp nhất.</aside>
 </section>
 
+<section class="slide" data-member="3" data-title="Ví dụ bài giảng: sơ đồ AON dự án A–G">
+  <h1 class="t" style="margin-bottom:4px">Ví dụ bài giảng: sơ đồ AON dự án A–G</h1>
+  <div class="row" style="gap:20px;align-items:flex-start">
+  <svg viewBox="0 0 720 470" style="width:700px;flex:none;display:block">
+    <defs>
+      <marker id="cx3g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0L10,5L0,10z" fill="#46526D"/></marker>
+      <marker id="cx3c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#E4572E"/></marker>
+    </defs>
+    <line x1="80" y1="240" x2="138" y2="67" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <line x1="80" y1="240" x2="138" y2="187" stroke="#E4572E" stroke-width="3.5" marker-end="url(#cx3c)"/>
+    <line x1="80" y1="240" x2="138" y2="307" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <line x1="80" y1="240" x2="138" y2="427" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <line x1="290" y1="67" x2="558" y2="67" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <line x1="290" y1="187" x2="348" y2="187" stroke="#E4572E" stroke-width="3.5" marker-end="url(#cx3c)"/>
+    <line x1="500" y1="170" x2="600" y2="106" stroke="#E4572E" stroke-width="3.5" marker-end="url(#cx3c)"/>
+    <line x1="635" y1="104" x2="635" y2="208" stroke="#E4572E" stroke-width="3.5" marker-end="url(#cx3c)"/>
+    <line x1="635" y1="284" x2="635" y2="398" stroke="#E4572E" stroke-width="3.5" marker-end="url(#cx3c)"/>
+    <line x1="290" y1="307" x2="588" y2="418" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <line x1="290" y1="427" x2="588" y2="432" stroke="#46526D" stroke-width="2.5" marker-end="url(#cx3g)"/>
+    <rect x="0" y="215" width="80" height="50" rx="25" fill="#14213D"/><text x="40" y="246" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">Bắt đầu</text>
+    <rect x="590" y="400" width="90" height="50" rx="25" fill="#14213D"/><text x="635" y="431" text-anchor="middle" font-size="17" font-weight="700" fill="#fff">Kết thúc</text>
+    <rect x="140" y="30" width="150" height="74" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="154" y="62" font-size="27" font-weight="800" fill="#14213D">A</text>
+    <text x="276" y="61" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 2</text>
+    <text x="215" y="90" text-anchor="middle" font-size="16" fill="#14213D">TE 2 · TL 8 · <tspan font-weight="800" fill="#0FA37F">S 6</tspan></text>
+    <rect x="140" y="150" width="150" height="74" rx="12" fill="#FDE8E2" stroke="#E4572E" stroke-width="3.5"/>
+    <text x="154" y="182" font-size="27" font-weight="800" fill="#E4572E">B</text>
+    <text x="276" y="181" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 3</text>
+    <text x="215" y="210" text-anchor="middle" font-size="16" fill="#14213D">TE 3 · TL 3 · <tspan font-weight="800" fill="#E4572E">S 0</tspan></text>
+    <rect x="140" y="270" width="150" height="74" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="154" y="302" font-size="27" font-weight="800" fill="#14213D">D</text>
+    <text x="276" y="301" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 2</text>
+    <text x="215" y="330" text-anchor="middle" font-size="16" fill="#14213D">TE 2 · TL 13 · <tspan font-weight="800" fill="#0FA37F">S 11</tspan></text>
+    <rect x="140" y="390" width="150" height="74" rx="12" fill="#fff" stroke="#14213D" stroke-width="2.5"/>
+    <text x="154" y="422" font-size="27" font-weight="800" fill="#14213D">E</text>
+    <text x="276" y="421" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 5</text>
+    <text x="215" y="450" text-anchor="middle" font-size="16" fill="#14213D">TE 5 · TL 13 · <tspan font-weight="800" fill="#0FA37F">S 8</tspan></text>
+    <rect x="350" y="150" width="150" height="74" rx="12" fill="#FDE8E2" stroke="#E4572E" stroke-width="3.5"/>
+    <text x="364" y="182" font-size="27" font-weight="800" fill="#E4572E">C</text>
+    <text x="486" y="181" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 5</text>
+    <text x="425" y="210" text-anchor="middle" font-size="16" fill="#14213D">TE 8 · TL 8 · <tspan font-weight="800" fill="#E4572E">S 0</tspan></text>
+    <rect x="560" y="30" width="150" height="74" rx="12" fill="#FDE8E2" stroke="#E4572E" stroke-width="3.5"/>
+    <text x="574" y="62" font-size="27" font-weight="800" fill="#E4572E">F</text>
+    <text x="696" y="61" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 3</text>
+    <text x="635" y="90" text-anchor="middle" font-size="16" fill="#14213D">TE 11 · TL 11 · <tspan font-weight="800" fill="#E4572E">S 0</tspan></text>
+    <rect x="560" y="210" width="150" height="74" rx="12" fill="#FDE8E2" stroke="#E4572E" stroke-width="3.5"/>
+    <text x="574" y="242" font-size="27" font-weight="800" fill="#E4572E">G</text>
+    <text x="696" y="241" text-anchor="end" font-size="18" font-weight="700" fill="#14213D">t = 2</text>
+    <text x="635" y="270" text-anchor="middle" font-size="16" fill="#14213D">TE 13 · TL 13 · <tspan font-weight="800" fill="#E4572E">S 0</tspan></text>
+  </svg>
+  <div class="grow col" style="gap:12px">
+    <div class="card" style="padding:10px 14px"><p class="small" style="margin:0"><b>Đọc nút:</b> t = thời gian (tháng), TE = xong sớm nhất, TL = xong trễ nhất, <b>S = TL − TE</b>.</p></div>
+    <div class="frame crit-f" style="font-size:19px;padding:10px 14px">TE dự án = <b>13 tháng</b>, lấy TL = TE.<br>Đường găng: <b>B → C → F → G</b><br><span class="small">3 + 5 + 3 + 2 = 13, mọi việc S = 0</span></div>
+    <table class="tight frag"><tr><th>Rút (Cr T)</th><th class="n">ΔC</th></tr><tr><td>B: 3 → 1</td><td class="n">28 − 20 = +8</td></tr><tr><td>C: 5 → 4</td><td class="n">48 − 30 = +18</td></tr><tr><td>F: 3 → 1</td><td class="n">26 − 20 = +6</td></tr><tr><td>G: 2 → 1</td><td class="n">60 − 30 = +30</td></tr></table>
+    <div class="frame green frag" style="font-size:18px;padding:8px 14px">Mục tiêu <b>13 → 9 tháng</b>: chỉ rút việc găng B, C, F, G. A, D, E có slack nên bỏ qua.</div>
+  </div></div>
+  <aside class="notes">Giới thiệu ví dụ trong bài giảng trước khi duyệt cây: 7 việc, mỗi nút ghi t, TE, TL, S. Đường găng B-C-F-G dài 13 tháng. Bảng bên phải là các cách rút việc găng và chi phí tăng thêm, đây chính là dữ liệu cho cây phương án ở slide sau.</aside>
+</section>
+
 <section class="slide" data-member="3" data-title="Thuật toán duyệt cây phương án làm gấp">
-  <h1 class="t">Duyệt cây phương án làm gấp (ví dụ trong bài giảng)</h1>
+  <h1 class="t">Duyệt cây phương án làm gấp</h1>
   <p class="sub">Dự án A–G đang mất 13 tháng, cần xong trong <b>9 tháng</b> với chi phí tăng ít nhất. Mở nhánh rẻ nhất trước, bỏ nhánh trùng.</p>
   <div class="row" style="gap:16px;align-items:flex-start"><div style="width:880px"><div class="viz" data-viz="tree"></div></div>
   <div class="grow"><table class="tight" style="font-size:16px"><tr><th>Rút</th><th class="n">Thêm</th></tr><tr><td>B: 3→1</td><td class="n">+8</td></tr><tr><td>C: 5→4</td><td class="n">+18</td></tr><tr><td>F: 3→1</td><td class="n">+6</td></tr><tr><td>G: 2→1</td><td class="n">+30</td></tr></table><p class="tiny mt">Việc găng ban đầu: B, C, F, G.</p></div></div>
@@ -1036,8 +1094,12 @@ function pertTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th c
   return s+`<tr><td colspan="5" style="text-align:right"><b>Tổng ET (nếu làm nối tiếp)</b></td><td class="n"><b>${f(sum)}</b></td><td></td></tr></table></div>`;}
 function cpTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th class="n">ET</th><th class="n">Bắt đầu sớm</th><th class="n">TE</th><th class="n">TL</th><th class="n">S = TL − TE</th><th class="n">Găng?</th></tr>';
   TASKS.forEach(t=>s+=`<tr class="${t.crit?'c':''}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${f(t.ET)}</td><td class="n">${f(t.ES)}</td><td class="n">${f(t.TE)}</td><td class="n">${f(t.TL)}</td><td class="n">${f(t.S)}</td><td class="n">${t.crit?'●':''}</td></tr>`); return s+'</table></div>';}
-function crashTable(){let s='<div class="tbl-wrap"><table class="tight"><tr><th class="n">CV</th><th>Công việc</th><th class="n">Bình thường</th><th class="n">Làm gấp</th><th class="n">Chi phí thêm</th></tr>';
-  TASKS.forEach(t=>s+=`<tr class="${t.crit?'c':''}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${f(t.ET)} tuần</td><td class="n">${t.cr.t} tuần</td><td class="n">+${t.cr.c} tr</td></tr>`); return s+'</table></div>';}
+function crashTable(){const h=(en,vi)=>`${en}<br><span style="font-weight:400;font-size:14px">${vi}</span>`;
+  let s=`<div class="tbl-wrap"><table class="tight crash-t"><tr><th>Activity</th><th class="n">${h('Normal Time','thời gian thường')}</th><th class="n">${h('Crash Time','thời gian gấp')}</th><th class="n">${h('Normal Cost','chi phí thường')}</th><th class="n">${h('Crash Cost','chi phí gấp')}</th><th class="n">${h('Chi phí rút 1 tuần','(CC − NC) / (NT − CT)')}</th></tr>`;
+  TASKS.forEach((t,i)=>{const nc=NCOST(t),cc=nc+t.cr.c,dt=t.ET-t.cr.t;
+    s+=`<tr class="${t.crit?'c':''}"><td><b>${t.id}</b> ${t.sh}</td><td class="n">${f(t.ET)}</td><td class="n">${t.cr.t}</td><td class="n">${nc}</td><td class="n">${cc}</td><td class="n"><span class="frag" data-s="${i+1}">(${cc} − ${nc}) / (${f(t.ET)} − ${t.cr.t}) = <b>${f(t.cr.c/dt)}</b></span></td></tr>`;});
+  return s+'</table></div>';}
+const NCOST=t=>t.res*t.ET*5; /* chi phí thường: số người × số tuần × 5 triệu */
 function critSumTable(){let s='<div class="tbl-wrap"><table><tr><th class="n">CV găng</th><th>Công việc</th><th class="n">o, m, p</th><th class="n">tₑ</th><th class="n">σ²</th></tr>';
   CRIT.forEach((t,i)=>s+=`<tr class="frag" data-s="${i+1}"><td class="n"><b>${t.id}</b></td><td>${t.name}</td><td class="n">${t.o}, ${t.m}, ${t.p}</td><td class="n">${f(t.ET)}</td><td class="n">${f(t.var)}</td></tr>`);
   return s+`<tr class="frag" data-s="6" style="background:var(--hl-soft)"><td colspan="3" style="text-align:right"><b>Cộng lại</b></td><td class="n"><b>μ = ${f(MU)}</b></td><td class="n"><b>${f(VAR)}</b></td></tr></table></div>`;}

@@ -500,6 +500,13 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Hai yêu cầu của bài toán: rút đủ Δt và chi phí thêm nhỏ nhất. Hai cạm bẫy: rút nhầm việc không găng, và quên rằng đường găng có thể đổi.</aside>
 </section>
 
+<section class="slide" data-member="3" data-title="Nhắc lại sơ đồ AON: việc nào găng?">
+  <h1 class="t" style="margin-bottom:2px">Nhắc lại sơ đồ AON: việc nào găng?</h1>
+  <div class="viz" data-viz="network" data-mode="full" style="max-width:1000px;margin:0 auto"></div>
+  <div class="frame crit-f frag center" style="font-size:20px;padding:8px 18px;margin-top:6px">Đường găng <b>A → B → E → G → H = 22 tuần</b> (S = 0): chỉ rút các việc này mới rút ngắn được dự án. <b>C, D, F</b> có slack nên rút cũng vô ích.</div>
+  <aside class="notes">Trước khi xem bảng chi phí, nhắc lại sơ đồ AON ở phần 2 với đủ TE (xanh), TL (cam) và slack. Năm việc viền đỏ có S = 0 là việc găng, đó là danh sách duy nhất được phép chọn khi làm gấp.</aside>
+</section>
+
 <section class="slide" data-member="3" data-title="Dữ liệu làm gấp của dự án web">
   <h1 class="t">Dữ liệu làm gấp của dự án web</h1>
   <div class="row" style="gap:22px;align-items:flex-start">
@@ -533,21 +540,40 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Đây là ví dụ trong bài giảng. Bấm từng bước: mở nhánh F, rồi nhánh B, rồi chốt lời giải rút F và B với chi phí +14. Nhánh BF bị bỏ vì trùng với FB.</aside>
 </section>
 
-<section class="slide" data-member="3" data-title="Mở rộng: fast-tracking và luật Brooks">
-  <h1 class="t">Mở rộng: không chỉ có “thêm tiền, thêm người”</h1>
-  <div class="row" style="gap:22px;align-items:flex-start">
-    <div style="width:560px" class="col">
-      <div class="card accent frag"><h3>Crashing</h3><p class="small">Thêm nguồn lực cho việc găng. Tốn thêm tiền nhưng cấu trúc lịch giữ nguyên.</p></div>
-      <div class="card accent frag"><h3>Fast-tracking</h3><p class="small">Làm song song những việc vốn nối tiếp. Không tốn thêm nguồn lực nhưng tăng nguy cơ phải làm lại.</p><p class="small"><span class="web">Web</span> Bắt đầu nhập liệu (F) khi D mới xong phần lớn bài.</p></div>
-    </div>
-    <div class="grow frag"><div class="frame" style="font-size:20px;padding:12px 16px;box-shadow:6px 6px 0 var(--ink)"><b>Luật Brooks</b> (F. Brooks, <i>The Mythical Man-Month</i>, 1975): thêm người vào dự án phần mềm đang trễ thường làm nó trễ thêm.</div>
-      <p class="small mt" style="margin-bottom:0">Số kênh trao đổi giữa n người = n(n−1)/2:</p><div class="viz" data-viz="channels" style="max-width:430px"></div></div>
+<section class="slide" data-member="3" data-title="Mở rộng: crashing và fast-tracking">
+  <h1 class="t">Mở rộng: hai cách nén lịch (schedule compression)</h1>
+  <p class="sub">Cả hai chỉ có tác dụng khi áp dụng cho <b>việc găng</b>: rút việc có slack thì dự án không ngắn đi.</p>
+  <div class="cols2" style="gap:18px">
+    <div class="card accent frag"><h3>Crashing (làm gấp)</h3><p class="small" style="color:var(--ink)"><b>Định nghĩa:</b> rút ngắn thời gian một việc găng bằng cách <b>thêm nguồn lực</b> (thêm người, tăng ca, thuê ngoài), chấp nhận chi phí tăng. Thứ tự các việc giữ nguyên.</p><p class="small"><span class="web">Web</span> Thêm người kiểm thử G: 4 → 3 tuần, +3 triệu (bước 1 khi làm gấp 22 → 20 tuần).</p></div>
+    <div class="card accent frag"><h3>Fast-tracking (làm chồng lấn)</h3><p class="small" style="color:var(--ink)"><b>Định nghĩa:</b> cho các việc găng vốn <b>nối tiếp</b> (xong việc trước mới làm việc sau) chạy <b>song song một phần</b>. Không thêm nguồn lực, nhưng việc sau phải dùng kết quả chưa hoàn chỉnh của việc trước.</p><p class="small"><span class="web">Web</span> Bắt đầu lập trình E khi giao diện B mới xong các màn hình chính.</p></div>
   </div>
-  <p class="small frag mt">Kết luận: crashing hiệu quả với việc chia nhỏ được (soạn nội dung, nhập liệu), kém hiệu quả với việc lõi như lập trình.</p>
-  <aside class="notes">Thêm người thì cần đào tạo và họp nhiều hơn. 4 người có 6 kênh, 8 người có 28 kênh. Vì vậy tăng gấp đôi người không rút ngắn một nửa thời gian.</aside>
+  <div class="tbl-wrap frag mt"><table class="tight">
+    <tr><th>So sánh</th><th>Crashing</th><th>Fast-tracking</th></tr>
+    <tr><td><b>Rút ngắn bằng</b></td><td>Thêm người, thêm tiền cho việc găng</td><td>Đổi quan hệ nối tiếp thành chồng lấn</td></tr>
+    <tr><td><b>Chi phí</b></td><td class="crit">Tăng (tính bằng chi phí/tuần rút)</td><td class="ok">Gần như không tăng</td></tr>
+    <tr><td><b>Rủi ro chính</b></td><td>Thêm người không hiệu quả (luật Brooks)</td><td>Phải làm lại khi việc trước thay đổi</td></tr>
+    <tr><td><b>Phù hợp khi</b></td><td>Việc chia nhỏ được, có ngân sách</td><td>Việc sau bắt đầu được với một phần kết quả</td></tr>
+  </table></div>
+  <aside class="notes">Nêu định nghĩa trước: crashing là thêm nguồn lực, fast-tracking là cho việc nối tiếp chạy chồng lên nhau. Cả hai đều phải nhắm vào việc găng. Sau đó so sánh: crashing tốn tiền, fast-tracking tốn rủi ro làm lại. Rủi ro của crashing chính là luật Brooks ở slide sau.</aside>
 </section>
 
-<section class="slide" data-member="3" data-title="Hoạt động 3: Bạn là PM">
+<section class="slide" data-member="3" data-title="Mở rộng: luật Brooks">
+  <h1 class="t">Luật Brooks: thêm người có luôn xong sớm hơn?</h1>
+  <div class="row" style="gap:22px;align-items:flex-start">
+    <div style="width:610px;gap:10px" class="col">
+      <div class="frame" style="font-size:19px;padding:10px 16px;box-shadow:6px 6px 0 var(--ink)"><b>Luật Brooks</b> (F. Brooks, <i>The Mythical Man-Month</i>, 1975): <i>“Thêm người vào một dự án phần mềm đang trễ sẽ làm nó trễ thêm.”</i></div>
+      <div class="card frag" style="border-left:8px solid var(--m3);padding:10px 16px"><b>1. Thời gian làm quen.</b> <span class="small">Người mới cần học mã nguồn, quy trình; người cũ phải dừng việc để kèm. Vài tuần đầu năng suất cả nhóm còn <b>giảm</b>.</span></div>
+      <div class="card frag" style="border-left:8px solid var(--m3);padding:10px 16px"><b>2. Chi phí trao đổi.</b> <span class="small">Số kênh giữa n người là n(n−1)/2, tăng nhanh hơn nhiều so với số người: nhân đôi người thì số kênh tăng gần 5 lần.</span></div>
+      <div class="card frag" style="border-left:8px solid var(--m3);padding:10px 16px"><b>3. Việc không chia nhỏ được.</b> <span class="small">“9 người mẹ không thể sinh một em bé trong 1 tháng.” Việc phải làm tuần tự thì thêm người không rút ngắn được.</span></div>
+    </div>
+    <div class="grow frag" data-s="2"><p class="small" style="margin-bottom:0">Số kênh trao đổi n(n−1)/2:</p><div class="viz" data-viz="channels" style="max-width:430px"></div>
+      <p class="small center" style="margin:0">4 → 8 người: người <b>×2</b>, kênh 6 → 28 (<b class="crit">×4,7</b>)</p></div>
+  </div>
+  <div class="frame green frag" style="font-size:18px;padding:8px 16px;margin-top:12px"><b>Kết luận:</b> crashing chỉ hiệu quả khi việc <b>chia nhỏ được</b> (soạn nội dung, nhập liệu) và người mới <b>làm được ngay</b>, kém hiệu quả với việc lõi như lập trình. </div>
+  <aside class="notes">Giải thích 3 lý do của luật Brooks: làm quen, trao đổi, việc không chia được. Biểu đồ: 4 người có 6 kênh, 8 người có 28 kênh, tức nhân đôi người thì kênh tăng gần 5 lần. Kết luận dựa vào chính dự án web: phương án rẻ nhất đã chọn G và B, tránh việc lập trình E.</aside>
+</section>
+
+<!-- <section class="slide" data-member="3" data-title="Hoạt động 3: Bạn là PM">
   <h1 class="t">Hoạt động 3: Bạn là PM</h1>
   <div class="col" style="align-items:center">
     <table class="ex" style="width:620px"><tr><th>Việc</th><th>Găng?</th><th class="n">Thời gian</th><th class="n">Làm gấp</th><th class="n">Thêm</th></tr><tr class="c"><td>A</td><td>Có</td><td class="n">4 tuần</td><td class="n">3 tuần</td><td class="n">+6 tr</td></tr><tr class="c"><td>B</td><td>Có</td><td class="n">6 tuần</td><td class="n">4 tuần</td><td class="n">+10 tr</td></tr><tr class="c"><td>C</td><td>Có</td><td class="n">5 tuần</td><td class="n">4 tuần</td><td class="n">+3 tr</td></tr><tr><td>X</td><td>Không</td><td class="n">3 tuần</td><td class="n">2 tuần</td><td class="n">+1 tr</td></tr></table>
@@ -591,7 +617,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
     </div>
   </div>
   <aside class="notes">Logic tham lam (greedy): mỗi bước luôn rút việc găng rẻ nhất còn khả năng, rồi tính lại. Ở đây đường găng không đổi trong suốt quá trình nên không cần kiểm tra lại đường găng mới. So sánh bảng bên phải cho thấy C+B là rẻ nhất trong các cách rút đủ 2 tuần.</aside>
-</section>
+</section> -->
 <!-- ============ PHẦN 4 ============ -->
 <section class="slide divider" data-member="4" data-title="Phần 4 – PERT, xác suất và rủi ro">
   <div class="big">4</div>
@@ -675,8 +701,8 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Ba hướng mở rộng. Ý chính: PERT giúp biết rủi ro, còn buffer là cách hành động trước rủi ro đó.</aside>
 </section>
 
-<section class="slide" data-member="4" data-title="Hoạt động 4: PERT trên mạng 4 việc">
-  <h1 class="t">Hoạt động 4: xác suất hoàn thành đúng hạn</h1>
+<section class="slide" data-member="4" data-title="Hoạt động 3: PERT trên mạng 4 việc">
+  <h1 class="t">Hoạt động 3: xác suất hoàn thành đúng hạn</h1>
   <div class="col" style="align-items:center">
     <table class="ex" style="width:500px"><tr><th>CV</th><th>Tiền nhiệm</th><th class="n">o</th><th class="n">m</th><th class="n">p</th></tr><tr><td>A</td><td>—</td><td class="n">2</td><td class="n">3</td><td class="n">4</td></tr><tr><td>B</td><td>A</td><td class="n">2</td><td class="n">4</td><td class="n">6</td></tr><tr><td>C</td><td>A</td><td class="n">3</td><td class="n">6</td><td class="n">12</td></tr><tr><td>D</td><td>B, C</td><td class="n">1</td><td class="n">2</td><td class="n">3</td></tr></table>
     <ol class="mt" style="padding-left:26px;max-width:500px;font-size:23px;line-height:1.6"><li>Tính tₑ và σ² mỗi việc</li><li>Vẽ AON, tìm đường găng theo tₑ</li><li>Tính μ, σ của dự án</li><li>Tính P(T ≤ 13 ngày)</li></ol>
@@ -684,7 +710,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Cho lớp 4 phút tự làm rồi chuyển các slide sau để xem lời giải từng bước. Số liệu đã đổi so với bài gốc: ở đây việc C rủi ro cao nên đường găng là A, C, D và xác suất xong trong 13 ngày khoảng 83%.</aside>
 </section>
 
-<section class="slide" data-member="4" data-title="Hoạt động 4: tính tₑ và σ² từng việc">
+<section class="slide" data-member="4" data-title="Hoạt động 3: tính tₑ và σ² từng việc">
   <h1 class="t">Bước 1: tính tₑ và σ² cho từng việc</h1>
   <div class="frame center" style="font-size:24px">
     <span class="math">tₑ = (o + 4m + p) / 6</span> &nbsp;&nbsp; <span class="math">σ² = ((p − o) / 6)²</span>
@@ -699,7 +725,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Mỗi việc thế số vào hai công thức PERT đã học ở phần 4. Chú ý C có p rất lớn (12) so với o, m nên tₑ và σ² đều lớn: đây là việc rủi ro cao nhất.</aside>
 </section>
 
-<section class="slide" data-member="4" data-title="Hoạt động 4: vẽ AON, tìm đường găng">
+<section class="slide" data-member="4" data-title="Hoạt động 3: vẽ AON, tìm đường găng">
   <h1 class="t" style="margin-bottom:2px">Bước 2: vẽ AON, tìm đường găng theo tₑ</h1>
   <svg viewBox="0 0 860 420" style="width:100%;max-width:940px;margin:0 auto;display:block">
     <defs>
@@ -736,7 +762,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Nhắc lại: đường găng là đường dài nhất trong mạng, vì đó là đường quyết định dự án xong sớm nhất khi nào. A-B-D ngắn hơn nên có slack, không phải đường găng.</aside>
 </section>
 
-<section class="slide" data-member="4" data-title="Hoạt động 4: tính μ và σ của dự án">
+<section class="slide" data-member="4" data-title="Hoạt động 3: tính μ và σ của dự án">
   <h1 class="t">Bước 3: tính μ và σ của dự án</h1>
   <div class="frame center" style="font-size:24px">
     <span class="math">μ = Σ tₑ</span> (trên đường găng) &nbsp;&nbsp; <span class="math">σ² = Σ σ²</span> (trên đường găng) &nbsp;&nbsp; <span class="math">σ = √σ²</span>
@@ -750,7 +776,7 @@ kbd{background:#33456E;border-radius:5px;padding:1px 7px;font-family:inherit;fon
   <aside class="notes">Nhắc công thức: cộng tₑ và cộng σ² trực tiếp trên các việc găng, nhưng σ của dự án là căn bậc hai của tổng phương sai, không phải tổng các σ riêng lẻ.</aside>
 </section>
 
-<section class="slide" data-member="4" data-title="Hoạt động 4: xác suất đúng hạn 13 ngày">
+<section class="slide" data-member="4" data-title="Hoạt động 3: xác suất đúng hạn 13 ngày">
   <h1 class="t">Bước 4: xác suất hoàn thành trong 13 ngày</h1>
   <div class="row" style="gap:22px;align-items:flex-start">
     <div style="width:360px" class="col">
